@@ -1,4 +1,4 @@
-import { NextResponse, NextRequest } from "next/server";
+import { NextRequest, NextResponse } from "next/server";
 
 const PROTECTED_PREFIX = "/app";
 
@@ -9,9 +9,9 @@ export function middleware(req: NextRequest) {
     return NextResponse.next();
   }
 
-  const authCookie = req.cookies.get("cookedai_auth");
+  const userIdCookie = req.cookies.get("cookedai_user_id");
 
-  if (authCookie?.value === "1") {
+  if (userIdCookie?.value) {
     return NextResponse.next();
   }
 

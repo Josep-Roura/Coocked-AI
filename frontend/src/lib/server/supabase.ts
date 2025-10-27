@@ -48,6 +48,15 @@ create table if not exists public.weekly_workouts (
   nutrition_json jsonb not null,
   created_at timestamptz default now()
 );
+
+-- Table: reminders
+create table if not exists public.reminders (
+  id uuid primary key default gen_random_uuid(),
+  user_id uuid references public.users(id) on delete cascade,
+  enabled boolean default true,
+  offset_minutes integer default 30,
+  created_at timestamptz default now()
+);
 */
 
 const SUPABASE_URL = process.env.NEXT_PUBLIC_SUPABASE_URL;
@@ -61,6 +70,7 @@ type SupabaseRequestOptions = {
   searchParams?: URLSearchParams;
   body?: unknown;
   returnRepresentation?: boolean;
+  prefer?: string[];
 };
 
 export type SupabaseError = {
@@ -81,7 +91,8 @@ class SupabaseRestClient {
     table,
     searchParams,
     body,
-    returnRepresentation
+    returnRepresentation,
+    prefer
   }: SupabaseRequestOptions): Promise<SupabaseResponse<T>> {
     if (!SUPABASE_URL || !SERVICE_ROLE_KEY) {
       return {
@@ -110,8 +121,15 @@ class SupabaseRestClient {
     if (body !== undefined) {
       headers["Content-Type"] = "application/json";
     }
+    const preferDirectives: string[] = [];
     if (returnRepresentation) {
-      headers["Prefer"] = "return=representation";
+      preferDirectives.push("return=representation");
+    }
+    if (prefer?.length) {
+      preferDirectives.push(...prefer);
+    }
+    if (preferDirectives.length > 0) {
+      headers["Prefer"] = preferDirectives.join(",");
     }
 
     const response = await fetch(url.toString(), {
@@ -225,12 +243,18 @@ class SupabaseQueryBuilder<T> {
     });
   }
 
-  async insert(values: T | T[]) {
+  async insert(values: T | T[], options?: { upsert?: boolean }) {
+    const prefer: string[] = [];
+    if (options?.upsert) {
+      prefer.push("resolution=merge-duplicates");
+    }
+
     return this.client.request<T[]>({
       method: "POST",
       table: this.table,
       body: Array.isArray(values) ? values : [values],
-      returnRepresentation: true
+      returnRepresentation: true,
+      prefer
     });
   }
 

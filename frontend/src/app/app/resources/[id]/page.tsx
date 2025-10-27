@@ -98,11 +98,16 @@ export default function ResourceDetailPage() {
                 key={section.key}
                 className="rounded-md border border-border bg-[var(--surface)] p-4 space-y-2"
               >
-                <div className="flex items-start justify-between">
-                  <h3 className="text-sm font-semibold text-[var(--text-primary)]">
-                    {section.title}
-                  </h3>
-                  <span className="text-[var(--text-secondary)] text-[11px] leading-tight">
+                <div className="flex items-start justify-between gap-3">
+                  <div className="flex items-center gap-2">
+                    <span className="inline-flex items-center rounded-full border border-border bg-white/20 px-2 py-[2px] text-[10px] font-semibold uppercase tracking-wide text-[var(--text-secondary)]">
+                      {section.badge}
+                    </span>
+                    <h3 className="text-sm font-semibold text-[var(--text-primary)]">
+                      {section.title}
+                    </h3>
+                  </div>
+                  <span className="text-[var(--text-secondary)] text-[11px] leading-tight text-right">
                     {section.content.timing}
                   </span>
                 </div>
@@ -150,16 +155,32 @@ function formatDate(iso: string) {
 function buildSections(data: PlanDetail) {
   const plan = data.fullDayPlan;
   return [
-    { key: "pre", title: "Pre-entreno", content: plan.preWorkout },
+    { key: "pre", title: "Pre-entreno", badge: "PRE", content: plan.preWorkout },
     {
       key: "post",
       title: "Inmediato post-entreno",
+      badge: "POST",
       content: plan.intraOrImmediatePost
     },
-    { key: "first", title: "Primera comida sólida", content: plan.firstMeal },
-    { key: "snack", title: "Snack", content: plan.snack },
-    { key: "lunch", title: "Comida principal", content: plan.lunch },
-    { key: "dinner", title: "Cena", content: plan.dinner },
-    { key: "sleep", title: "Antes de dormir", content: plan.beforeSleep }
+    {
+      key: "first",
+      title: "Primera comida sólida",
+      badge: "COMIDA",
+      content: plan.firstMeal
+    },
+    { key: "snack", title: "Snack", badge: "SNACK", content: plan.snack },
+    {
+      key: "lunch",
+      title: "Comida principal",
+      badge: "COMIDA",
+      content: plan.lunch
+    },
+    { key: "dinner", title: "Cena", badge: "CENA", content: plan.dinner },
+    {
+      key: "sleep",
+      title: "Antes de dormir",
+      badge: "DESCANSO",
+      content: plan.beforeSleep
+    }
   ];
 }

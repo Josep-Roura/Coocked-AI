@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { Card, CardHeader, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Modal } from "@/components/ui/modal";
@@ -15,11 +15,26 @@ import { WeeklyCalendar } from "@/components/calendar/WeeklyCalendar";
 import { useTrainingPeaksConnection } from "@/lib/api/useTrainingPeaksConnection";
 import { useListResourcesQuery } from "@/lib/api/useListResourcesQuery";
 import { useWeeklyPlanQuery } from "@/lib/api/useWeeklyPlanQuery";
+import { useReminderSettings } from "@/lib/api/useReminderSettings";
 import { Loader } from "@/components/feedback/Loader";
+import { FormField } from "@/components/ui/form-field";
+import { Input } from "@/components/ui/input";
 
 export default function DashboardPage() {
   const [openPlanModal, setOpenPlanModal] = useState(false);
   const [openTpModal, setOpenTpModal] = useState(false);
+  const [openReminderModal, setOpenReminderModal] = useState(false);
+
+  const [toast, setToast] = useState<
+    | {
+        message: string;
+        variant: "success" | "error";
+      }
+    | null
+  >(null);
+
+  const [reminderEnabled, setReminderEnabled] = useState(true);
+  const [reminderOffset, setReminderOffset] = useState(30);
 
   const [lastCreated, setLastCreated] = useState<
     | {
@@ -32,6 +47,21 @@ export default function DashboardPage() {
 
   const { data: planHistory, isLoading: isLoadingHistory } =
     useListResourcesQuery();
+
+  const showToast = useCallback(
+    (message: string, variant: "success" | "error") => {
+      setToast({ message, variant });
+    },
+    []
+  );
+
+  const {
+    settings: reminderSettings,
+    isLoading: loadingReminders,
+    error: reminderError,
+    saveSettings,
+    isSaving: isSavingReminder
+  } = useReminderSettings();
 
   useEffect(() => {
     if (planHistory.length === 0) {
@@ -50,6 +80,19 @@ export default function DashboardPage() {
       });
     }
   }, [lastCreated, planHistory]);
+
+  useEffect(() => {
+    if (reminderSettings) {
+      setReminderEnabled(reminderSettings.enabled);
+      setReminderOffset(reminderSettings.offsetMinutes);
+    }
+  }, [reminderSettings]);
+
+  useEffect(() => {
+    if (!toast) return;
+    const timeout = window.setTimeout(() => setToast(null), 3000);
+    return () => window.clearTimeout(timeout);
+  }, [toast]);
 
   const { createResource, isLoading, error } = useCreateResourceMutation({
     onSuccess: (res) => {
@@ -93,10 +136,20 @@ export default function DashboardPage() {
 
   function handleMark(taken: boolean) {
     if (!lastCreated) return;
-    markAdherence({
-      planId: lastCreated.id,
-      taken
-    });
+    markAdherence(
+      {
+        planId: lastCreated.id,
+        taken
+      },
+      {
+        onSuccess: () => {
+          showToast("Guardado ✅", "success");
+        },
+        onError: (err) => {
+          showToast(err.message || "No se pudo guardar", "error");
+        }
+      }
+    );
   }
 
   function handleOpenPlanModal() {
@@ -104,19 +157,65 @@ export default function DashboardPage() {
     track("open_generate_plan_modal");
   }
 
-  // -------- TrainingPeaks connection mock --------
-  const { connected, isConnecting, connect } =
-    useTrainingPeaksConnection();
+  const {
+    data: week,
+    loading: loadingWeek,
+    error: weekError,
+    refetch: refetchWeek,
+    isFetching: isFetchingWeek
+  } = useWeeklyPlanQuery();
+
+  const handleWeekRefresh = useCallback(() => {
+    void refetchWeek();
+  }, [refetchWeek]);
+
+  const { connected, isConnecting, connect, error: tpError } =
+    useTrainingPeaksConnection({ onSync: handleWeekRefresh });
 
   function handleConnectTp() {
-    connect();
+    void connect();
     // disparo track de intención de integrar TrainingPeaks
     track("tp_connect_clicked");
   }
-  // -----------------------------------------------
 
-  const { data: week, loading: loadingWeek, error: weekError } =
-    useWeeklyPlanQuery();
+  function handleOpenReminderConfig() {
+    if (reminderSettings) {
+      setReminderEnabled(reminderSettings.enabled);
+      setReminderOffset(reminderSettings.offsetMinutes);
+    }
+    setOpenReminderModal(true);
+  }
+
+  function handleSaveReminders(e: React.FormEvent<HTMLFormElement>) {
+    e.preventDefault();
+    const normalizedOffset = Math.max(5, Math.round(reminderOffset || 0));
+    setReminderOffset(normalizedOffset);
+    saveSettings(
+      { enabled: reminderEnabled, offsetMinutes: normalizedOffset },
+      {
+        onSuccess: (settings) => {
+          setOpenReminderModal(false);
+          setReminderEnabled(settings.enabled);
+          setReminderOffset(settings.offsetMinutes);
+          showToast("Recordatorios actualizados ✅", "success");
+        },
+        onError: (err) => {
+          showToast(
+            err.message || "No se pudieron guardar los recordatorios",
+            "error"
+          );
+        }
+      }
+    );
+  }
+
+  useEffect(() => {
+    if (tpError) {
+      showToast(tpError, "error");
+    }
+  }, [tpError, showToast]);
+
+  const effectiveWeekLoading = loadingWeek || isFetchingWeek;
 
   return (
     <>
@@ -156,11 +255,23 @@ export default function DashboardPage() {
                     <span>Cargando último plan...</span>
                   </div>
                 ) : lastCreated ? (
-                  <Alert
-                    variant="success"
-                    title="Plan generado correctamente"
-                    description={`${lastCreated.title} (${lastCreated.category}) ya está listo.`}
-                  />
+                  <div className="space-y-3">
+                    <Alert
+                      variant="success"
+                      title="Plan generado correctamente"
+                      description={`${lastCreated.title} (${lastCreated.category}) ya está listo.`}
+                    />
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      className="px-0 text-sm font-medium text-[var(--text-primary)] underline underline-offset-4"
+                      onClick={() => {
+                        window.location.href = `/app/resources/${lastCreated.id}`;
+                      }}
+                    >
+                      Ver plan completo →
+                    </Button>
+                  </div>
                 ) : (
                   <ul className="text-sm leading-relaxed text-[var(--text-secondary)] space-y-1">
                     <li>• Aún no has generado ningún plan hoy</li>
@@ -197,6 +308,41 @@ export default function DashboardPage() {
         </div>
       </MotionWrapper>
 
+      <MotionWrapper keyId="reminders-card">
+        <Card className="mt-8">
+          <CardHeader
+            title="Recordatorios post-entreno"
+            description="Recibe un aviso para tomar tu nutrición crítica tras cada sesión."
+          />
+          <CardContent className="space-y-3">
+            {reminderError && (
+              <Alert
+                variant="error"
+                title="No se pudo cargar la configuración"
+                description={reminderError.message}
+              />
+            )}
+
+            <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+              <div className="text-sm leading-relaxed text-[var(--text-secondary)]">
+                {loadingReminders
+                  ? "Cargando estado de recordatorios..."
+                  : `Recordatorios post-entreno: ${reminderEnabled ? "Activados" : "Desactivados"} · aviso ${reminderOffset} min después del entreno`}
+              </div>
+
+              <Button
+                variant="ghost"
+                className="w-full sm:w-auto"
+                onClick={handleOpenReminderConfig}
+                disabled={loadingReminders}
+              >
+                Configurar
+              </Button>
+            </div>
+          </CardContent>
+        </Card>
+      </MotionWrapper>
+
       {/* === NUEVA SECCIÓN: SINCRONIZACIÓN TRAININGPEAKS + CALENDARIO === */}
       <MotionWrapper keyId="weekly-plan">
         <Card className="mt-8">
@@ -212,7 +358,9 @@ export default function DashboardPage() {
             {/* Header de acciones: conectar TrainingPeaks */}
             <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
               <div className="text-[var(--text-secondary)] text-xs leading-relaxed">
-                {connected
+                {isConnecting
+                  ? "Conectando con TrainingPeaks..."
+                  : connected
                   ? "TrainingPeaks conectado ✅"
                   : "Aún no conectado"}
               </div>
@@ -241,8 +389,16 @@ export default function DashboardPage() {
               </div>
             </div>
 
+            {tpError && (
+              <Alert
+                variant="error"
+                title="Error sincronizando TrainingPeaks"
+                description={tpError}
+              />
+            )}
+
             {/* Calendario semanal */}
-            {loadingWeek ? (
+            {effectiveWeekLoading ? (
               <div className="flex items-center gap-2 text-sm text-[var(--text-secondary)]">
                 <Loader size="sm" />
                 <span>Cargando plan semanal...</span>
@@ -308,6 +464,62 @@ export default function DashboardPage() {
         </div>
       </MotionWrapper>
 
+      {/* === MODAL: CONFIGURAR RECORDATORIOS === */}
+      <Modal
+        open={openReminderModal}
+        onClose={() => setOpenReminderModal(false)}
+        title="Configurar recordatorios post-entreno"
+        description="Decide si quieres recibir un aviso automático y con cuánto margen tras el entreno."
+        size="sm"
+      >
+        <form className="space-y-4" onSubmit={handleSaveReminders}>
+          <div className="flex items-center justify-between rounded-md border border-border bg-[var(--surface)] px-3 py-2">
+            <span className="text-sm font-medium text-[var(--text-primary)]">
+              Estado
+            </span>
+            <label className="inline-flex items-center gap-2 text-sm text-[var(--text-secondary)]">
+              <input
+                type="checkbox"
+                checked={reminderEnabled}
+                onChange={(e) => setReminderEnabled(e.target.checked)}
+                className="h-4 w-4 rounded border-border"
+              />
+              {reminderEnabled ? "Activados" : "Desactivados"}
+            </label>
+          </div>
+
+          <FormField
+            id="reminder-offset"
+            label="Minutos después del entreno"
+            hint="Te avisaremos pasado este tiempo para que tomes la nutrición clave."
+          >
+            <Input
+              type="number"
+              min={5}
+              step={5}
+              value={reminderOffset}
+              onChange={(e) => {
+                const parsed = parseInt(e.target.value, 10);
+                setReminderOffset(Number.isNaN(parsed) ? 0 : parsed);
+              }}
+            />
+          </FormField>
+
+          <div className="flex justify-end gap-2">
+            <Button
+              type="button"
+              variant="ghost"
+              onClick={() => setOpenReminderModal(false)}
+            >
+              Cancelar
+            </Button>
+            <Button type="submit" isLoading={isSavingReminder}>
+              Guardar
+            </Button>
+          </div>
+        </form>
+      </Modal>
+
       {/* === MODAL: CREAR PLAN POST-ENTRENO === */}
       <Modal
         open={openPlanModal}
@@ -360,6 +572,20 @@ export default function DashboardPage() {
           )}
         </div>
       </Modal>
+
+      {toast && (
+        <div className="fixed bottom-6 right-6 z-[200] rounded-lg border border-border bg-[var(--surface)] px-4 py-3 shadow-lg">
+          <span
+            className={`text-sm font-medium ${
+              toast.variant === "success"
+                ? "text-emerald-500"
+                : "text-red-500"
+            }`}
+          >
+            {toast.message}
+          </span>
+        </div>
+      )}
     </>
   );
 }

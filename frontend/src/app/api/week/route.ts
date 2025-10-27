@@ -1,15 +1,15 @@
 import { NextResponse } from "next/server";
 import { supabase } from "@/lib/server/supabase";
-import { getDemoUserId } from "@/lib/auth/getDemoUserId";
-
-function getUserIdFromRequest(): string {
-  // TODO: en el futuro leer JWT/headers/etc
-  return getDemoUserId();
-}
+import { getUserIdFromRequestOrThrow } from "@/lib/auth/getUserIdFromRequest";
 
 export async function GET() {
   try {
-    const userId = getUserIdFromRequest();
+    let userId: string;
+    try {
+      userId = getUserIdFromRequestOrThrow();
+    } catch {
+      return NextResponse.json({ error: "No autenticado" }, { status: 401 });
+    }
 
     const { data, error } = await supabase
       .from("weekly_workouts")
@@ -21,6 +21,12 @@ export async function GET() {
       );
 
     if (error) {
+      if (error.code === "config_missing") {
+        return NextResponse.json(
+          { error: "Configura Supabase en .env.local" },
+          { status: 500 }
+        );
+      }
       console.error("GET /api/week error", error);
       return NextResponse.json(
         { error: "No se pudo cargar el plan semanal" },
@@ -80,7 +86,12 @@ export async function POST(req: Request) {
       );
     }
 
-    const userId = getUserIdFromRequest();
+    let userId: string;
+    try {
+      userId = getUserIdFromRequestOrThrow();
+    } catch {
+      return NextResponse.json({ error: "No autenticado" }, { status: 401 });
+    }
 
     // Eliminamos planificación previa del usuario
     const { error: deleteError } = await supabase
@@ -89,6 +100,12 @@ export async function POST(req: Request) {
       .delete();
 
     if (deleteError) {
+      if (deleteError.code === "config_missing") {
+        return NextResponse.json(
+          { error: "Configura Supabase en .env.local" },
+          { status: 500 }
+        );
+      }
       console.error("POST /api/week delete error", deleteError);
       return NextResponse.json(
         { error: "No se pudo actualizar la semana" },
@@ -112,6 +129,12 @@ export async function POST(req: Request) {
         .insert(payload);
 
       if (insertError) {
+        if (insertError.code === "config_missing") {
+          return NextResponse.json(
+            { error: "Configura Supabase en .env.local" },
+            { status: 500 }
+          );
+        }
         console.error("POST /api/week insert error", insertError);
         return NextResponse.json(
           { error: "No se pudo guardar la semana" },

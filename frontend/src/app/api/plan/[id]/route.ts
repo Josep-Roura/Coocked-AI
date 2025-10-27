@@ -1,11 +1,6 @@
 import { NextResponse } from "next/server";
 import { supabase } from "@/lib/server/supabase";
-import { getDemoUserId } from "@/lib/auth/getDemoUserId";
-
-function getUserIdFromRequest(): string {
-  // TODO: en el futuro leer JWT/headers/etc
-  return getDemoUserId();
-}
+import { getUserIdFromRequestOrThrow } from "@/lib/auth/getUserIdFromRequest";
 
 export async function GET(
   _req: Request,
@@ -20,7 +15,12 @@ export async function GET(
       );
     }
 
-    const userId = getUserIdFromRequest();
+    let userId: string;
+    try {
+      userId = getUserIdFromRequestOrThrow();
+    } catch {
+      return NextResponse.json({ error: "No autenticado" }, { status: 401 });
+    }
 
     const { data, error } = await supabase
       .from("plans")
@@ -32,6 +32,12 @@ export async function GET(
       );
 
     if (error) {
+      if (error.code === "config_missing") {
+        return NextResponse.json(
+          { error: "Configura Supabase en .env.local" },
+          { status: 500 }
+        );
+      }
       console.error(`GET /api/plan/${planId} error`, error);
       return NextResponse.json(
         { error: "No se pudo cargar el plan" },

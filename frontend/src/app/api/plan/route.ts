@@ -1,12 +1,7 @@
 import { NextResponse } from "next/server";
 import { supabase } from "@/lib/server/supabase";
 import { generatePlanWithAI } from "@/lib/ai/generatePlan";
-import { getDemoUserId } from "@/lib/auth/getDemoUserId";
-
-function getUserIdFromRequest(): string {
-  // TODO: en el futuro leer JWT/headers/etc
-  return getDemoUserId();
-}
+import { getUserIdFromRequestOrThrow } from "@/lib/auth/getUserIdFromRequest";
 
 export async function POST(req: Request) {
   try {
@@ -28,7 +23,12 @@ export async function POST(req: Request) {
       );
     }
 
-    const userId = getUserIdFromRequest();
+    let userId: string;
+    try {
+      userId = getUserIdFromRequestOrThrow();
+    } catch {
+      return NextResponse.json({ error: "No autenticado" }, { status: 401 });
+    }
 
     const planFromAI = await generatePlanWithAI({
       workoutType,
@@ -55,6 +55,12 @@ export async function POST(req: Request) {
       });
 
     if (error) {
+      if (error.code === "config_missing") {
+        return NextResponse.json(
+          { error: "Configura Supabase en .env.local" },
+          { status: 500 }
+        );
+      }
       console.error("POST /api/plan error", error);
       return NextResponse.json(
         { error: "Error guardando el plan" },
@@ -93,7 +99,12 @@ export async function POST(req: Request) {
 
 export async function GET() {
   try {
-    const userId = getUserIdFromRequest();
+    let userId: string;
+    try {
+      userId = getUserIdFromRequestOrThrow();
+    } catch {
+      return NextResponse.json({ error: "No autenticado" }, { status: 401 });
+    }
 
     const { data, error } = await supabase
       .from("plans")
@@ -102,6 +113,12 @@ export async function GET() {
       .select("id,title,category,created_at");
 
     if (error) {
+      if (error.code === "config_missing") {
+        return NextResponse.json(
+          { error: "Configura Supabase en .env.local" },
+          { status: 500 }
+        );
+      }
       console.error("GET /api/plan error", error);
       return NextResponse.json(
         { error: "No se pudieron cargar los planes" },

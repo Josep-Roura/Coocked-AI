@@ -1,3 +1,5 @@
+import { tryGeneratePlanWithOpenAI } from "./generatePlanWithOpenAI";
+
 export type PlanInput = {
   workoutType: string;
   durationMin: number;
@@ -68,8 +70,12 @@ export type GeneratedPlan = {
 export async function generatePlanWithAI(
   input: PlanInput
 ): Promise<GeneratedPlan> {
-  // TODO: implementar llamada real a OpenAI usando process.env.OPENAI_API_KEY.
-  // Por ahora haz un fallback determinista en base a input.goal y input.dietPrefs.
+  const llmPlan = await tryGeneratePlanWithOpenAI(input);
+  if (llmPlan) {
+    return llmPlan;
+  }
+
+  // TODO: sustituir este fallback por prompts más ricos una vez la integración con OpenAI esté estable.
 
   let title = "Plan diario personalizado";
   if (input.goal === "musculo") {

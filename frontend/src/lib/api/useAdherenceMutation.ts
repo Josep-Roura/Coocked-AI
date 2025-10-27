@@ -43,6 +43,7 @@ export function useAdherenceMutation() {
 
   return {
     markAdherence: mutation.mutate,
+    markAdherenceAsync: mutation.mutateAsync,
     isSaving: mutation.isPending,
     error: mutation.error
   };

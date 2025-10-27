@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useQuery } from "@tanstack/react-query";
 import { WeeklyWorkout } from "@/lib/types/training";
 
 type WeeklyPlanResponse = {
@@ -8,44 +8,40 @@ type WeeklyPlanResponse = {
   week: WeeklyWorkout[];
 };
 
-export function useWeeklyPlanQuery() {
-  const [data, setData] = useState<WeeklyWorkout[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | undefined>(undefined);
-
-  useEffect(() => {
-    let cancelled = false;
-
-    async function load() {
-      try {
-        setLoading(true);
-        const res = await fetch("/api/week");
-        if (!res.ok) {
-          throw new Error("Error cargando semana");
-        }
-        const json = (await res.json()) as WeeklyPlanResponse;
-        if (!cancelled) {
-          const normalized = (json.week || []).map((w) => ({
-            ...w,
-            nutrition: Array.isArray(w.nutrition) ? w.nutrition : []
-          }));
-          setData(normalized);
-          setError(undefined);
-        }
-      } catch (err) {
-        if (!cancelled) {
-          setError("No se pudo cargar el plan semanal");
-        }
-      } finally {
-        if (!cancelled) setLoading(false);
+async function fetchWeeklyPlan(): Promise<WeeklyWorkout[]> {
+  const res = await fetch("/api/week");
+  if (!res.ok) {
+    let message = "No se pudo cargar el plan semanal";
+    try {
+      const payload = (await res.json()) as { error?: string };
+      if (payload?.error) {
+        message = payload.error;
       }
+    } catch {
+      // ignore
     }
+    throw new Error(message);
+  }
 
-    load();
-    return () => {
-      cancelled = true;
-    };
-  }, []);
+  const json = (await res.json()) as WeeklyPlanResponse;
+  return (json.week || []).map((w) => ({
+    ...w,
+    nutrition: Array.isArray(w.nutrition) ? w.nutrition : []
+  }));
+}
 
-  return { data, loading, error };
+export function useWeeklyPlanQuery() {
+  const query = useQuery<WeeklyWorkout[], Error>({
+    queryKey: ["weekly-plan"],
+    queryFn: fetchWeeklyPlan,
+    staleTime: 1000 * 60
+  });
+
+  return {
+    data: query.data ?? [],
+    loading: query.isLoading,
+    error: query.error?.message,
+    refetch: query.refetch,
+    isFetching: query.isFetching
+  };
 }

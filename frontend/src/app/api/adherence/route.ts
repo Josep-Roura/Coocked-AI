@@ -1,11 +1,6 @@
 import { NextResponse } from "next/server";
 import { supabase } from "@/lib/server/supabase";
-import { getDemoUserId } from "@/lib/auth/getDemoUserId";
-
-function getUserIdFromRequest(): string {
-  // TODO: en el futuro leer JWT/headers/etc
-  return getDemoUserId();
-}
+import { getUserIdFromRequestOrThrow } from "@/lib/auth/getUserIdFromRequest";
 
 export async function POST(req: Request) {
   try {
@@ -19,7 +14,12 @@ export async function POST(req: Request) {
       );
     }
 
-    const userId = getUserIdFromRequest();
+    let userId: string;
+    try {
+      userId = getUserIdFromRequestOrThrow();
+    } catch {
+      return NextResponse.json({ error: "No autenticado" }, { status: 401 });
+    }
 
     const { error: insertError } = await supabase
       .from("adherence_logs")
@@ -30,6 +30,12 @@ export async function POST(req: Request) {
       });
 
     if (insertError) {
+      if (insertError.code === "config_missing") {
+        return NextResponse.json(
+          { error: "Configura Supabase en .env.local" },
+          { status: 500 }
+        );
+      }
       console.error("POST /api/adherence error", insertError);
       return NextResponse.json(
         { error: "No se pudo guardar la adherencia" },
@@ -57,7 +63,12 @@ export async function POST(req: Request) {
 
 export async function GET() {
   try {
-    const userId = getUserIdFromRequest();
+    let userId: string;
+    try {
+      userId = getUserIdFromRequestOrThrow();
+    } catch {
+      return NextResponse.json({ error: "No autenticado" }, { status: 401 });
+    }
     const summary = await fetchSummary(userId);
     return NextResponse.json({ ok: true, summary });
   } catch (err) {

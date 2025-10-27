@@ -1,0 +1,40 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* CSS variables para poder cambiar tema (light/dark) dinámicamente */
+:root {
+  --bg: theme(colors.bg.DEFAULT);
+  --surface: theme(colors.surface.DEFAULT);
+  --border: theme(colors.border.DEFAULT);
+  --text-primary: theme(colors.text.primary);
+  --text-secondary: theme(colors.text.secondary);
+}
+
+.dark {
+  --bg: theme(colors.bg.dark);
+  --surface: theme(colors.surface.dark);
+  --border: theme(colors.border.dark);
+  --text-primary: hsl(210, 10%, 92%);
+  --text-secondary: hsl(210, 8%, 60%);
+}
+
+/* BODY GLOBAL */
+body {
+  @apply bg-[var(--bg)] text-[var(--text-primary)] font-sans antialiased;
+}
+
+/* Scrollbar ligero (solo desktop) */
+@media (min-width: 768px) {
+  ::-webkit-scrollbar {
+    width: 6px;
+    height: 6px;
+  }
+  ::-webkit-scrollbar-track {
+    background: transparent;
+  }
+  ::-webkit-scrollbar-thumb {
+    background-color: rgba(0,0,0,0.15);
+    border-radius: 9999px;
+  }
+}

@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { Card, CardHeader, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Modal } from "@/components/ui/modal";
@@ -12,12 +12,29 @@ import { useAdherenceMutation } from "@/lib/api/useAdherenceMutation";
 import { MotionWrapper } from "@/components/motion-wrapper";
 import { track } from "@/lib/analytics/track";
 import { WeeklyCalendar } from "@/components/calendar/WeeklyCalendar";
-import { WeeklyWorkout } from "@/lib/types/training";
 import { useTrainingPeaksConnection } from "@/lib/api/useTrainingPeaksConnection";
+import { useListResourcesQuery } from "@/lib/api/useListResourcesQuery";
+import { useWeeklyPlanQuery } from "@/lib/api/useWeeklyPlanQuery";
+import { useReminderSettings } from "@/lib/api/useReminderSettings";
+import { Loader } from "@/components/feedback/Loader";
+import { FormField } from "@/components/ui/form-field";
+import { Input } from "@/components/ui/input";
 
 export default function DashboardPage() {
   const [openPlanModal, setOpenPlanModal] = useState(false);
   const [openTpModal, setOpenTpModal] = useState(false);
+  const [openReminderModal, setOpenReminderModal] = useState(false);
+
+  const [toast, setToast] = useState<
+    | {
+        message: string;
+        variant: "success" | "error";
+      }
+    | null
+  >(null);
+
+  const [reminderEnabled, setReminderEnabled] = useState(true);
+  const [reminderOffset, setReminderOffset] = useState(30);
 
   const [lastCreated, setLastCreated] = useState<
     | {
@@ -27,6 +44,55 @@ export default function DashboardPage() {
       }
     | undefined
   >(undefined);
+
+  const { data: planHistory, isLoading: isLoadingHistory } =
+    useListResourcesQuery();
+
+  const showToast = useCallback(
+    (message: string, variant: "success" | "error") => {
+      setToast({ message, variant });
+    },
+    []
+  );
+
+  const {
+    settings: reminderSettings,
+    isLoading: loadingReminders,
+    error: reminderError,
+    saveSettings,
+    isSaving: isSavingReminder
+  } = useReminderSettings();
+
+  useEffect(() => {
+    if (planHistory.length === 0) {
+      if (lastCreated) {
+        setLastCreated(undefined);
+      }
+      return;
+    }
+
+    if (!lastCreated) {
+      const newest = planHistory[0];
+      setLastCreated({
+        id: newest.id,
+        title: newest.title,
+        category: newest.category
+      });
+    }
+  }, [lastCreated, planHistory]);
+
+  useEffect(() => {
+    if (reminderSettings) {
+      setReminderEnabled(reminderSettings.enabled);
+      setReminderOffset(reminderSettings.offsetMinutes);
+    }
+  }, [reminderSettings]);
+
+  useEffect(() => {
+    if (!toast) return;
+    const timeout = window.setTimeout(() => setToast(null), 3000);
+    return () => window.clearTimeout(timeout);
+  }, [toast]);
 
   const { createResource, isLoading, error } = useCreateResourceMutation({
     onSuccess: (res) => {
@@ -58,31 +124,32 @@ export default function DashboardPage() {
     dietPrefs: string;
     notes: string;
   }) {
-    const generatedTitle = buildPlanTitle(data);
-    const category = data.goal;
-
     createResource({
-      title: generatedTitle,
-      description: data.notes || "",
-      category,
-      visibility: "private",
-      planData: {
-        workoutType: data.workoutType,
-        durationMin: data.durationMin,
-        goal: data.goal,
-        weightKg: data.weightKg,
-        dietPrefs: data.dietPrefs,
-        notes: data.notes
-      }
+      workoutType: data.workoutType,
+      durationMin: data.durationMin,
+      goal: data.goal,
+      weightKg: data.weightKg,
+      dietPrefs: data.dietPrefs,
+      notes: data.notes
     });
   }
 
   function handleMark(taken: boolean) {
     if (!lastCreated) return;
-    markAdherence({
-      resourceId: lastCreated.id,
-      taken
-    });
+    markAdherence(
+      {
+        planId: lastCreated.id,
+        taken
+      },
+      {
+        onSuccess: () => {
+          showToast("Guardado ✅", "success");
+        },
+        onError: (err) => {
+          showToast(err.message || "No se pudo guardar", "error");
+        }
+      }
+    );
   }
 
   function handleOpenPlanModal() {
@@ -90,85 +157,65 @@ export default function DashboardPage() {
     track("open_generate_plan_modal");
   }
 
-  // -------- TrainingPeaks connection mock --------
-  const { connected, isConnecting, connect } =
-    useTrainingPeaksConnection();
+  const {
+    data: week,
+    loading: loadingWeek,
+    error: weekError,
+    refetch: refetchWeek,
+    isFetching: isFetchingWeek
+  } = useWeeklyPlanQuery();
+
+  const handleWeekRefresh = useCallback(() => {
+    void refetchWeek();
+  }, [refetchWeek]);
+
+  const { connected, isConnecting, connect, error: tpError } =
+    useTrainingPeaksConnection({ onSync: handleWeekRefresh });
 
   function handleConnectTp() {
-    connect();
+    void connect();
     // disparo track de intención de integrar TrainingPeaks
     track("tp_connect_clicked");
   }
-  // -----------------------------------------------
 
-  // MOCK de semana (esto luego vendrá de TrainingPeaks + IA)
-  const mockWeek: WeeklyWorkout[] = [
-    {
-      id: "w1",
-      day: 0,
-      start: "07:30",
-      end: "08:30",
-      type: "Fuerza tren superior",
-      intensity: "alta",
-      nutrition: [
-        {
-          label: "Pre-entreno (30 min antes)",
-          advice:
-            "20g whey aislado + 30g crema de arroz. Objetivo: energía rápida y aminoácidos para evitar catabolismo."
-        },
-        {
-          label: "Post-entreno inmediato",
-          advice:
-            "Batido 40g proteína + carbo rápido (fruta + arroz). Tómatelo en los próximos 30 minutos."
-        }
-      ]
-    },
-    {
-      id: "w2",
-      day: 2,
-      start: "19:00",
-      end: "19:45",
-      type: "Rodaje Z2",
-      intensity: "media",
-      nutrition: [
-        {
-          label: "Pre-entreno",
-          advice:
-            "Snack ligero: plátano + 10g crema cacahuete. Evita grasa pesada justo antes para no molestar el estómago."
-        },
-        {
-          label: "Post-entreno",
-          advice:
-            "Carbo complejo + proteína magra (arroz + pollo). Mantén grasas bajas para acelerar recarga de glucógeno."
-        },
-        {
-          label: "Recuperación tarde",
-          advice:
-            "Antes de dormir: caseína 25g para soporte muscular nocturno."
-        }
-      ]
-    },
-    {
-      id: "w3",
-      day: 4,
-      start: "18:30",
-      end: "19:30",
-      type: "HIIT piernas",
-      intensity: "alta",
-      nutrition: [
-        {
-          label: "Pre-entreno",
-          advice:
-            "Carbo rápido (pan blanco + miel) + electrolitos. Evita fibra para no sobrecargar el estómago."
-        },
-        {
-          label: "Post-entreno",
-          advice:
-            "Batido whey + bebida isotónica. En 60 min, cena con carbo alto + sodio para favorecer la recarga."
-        }
-      ]
+  function handleOpenReminderConfig() {
+    if (reminderSettings) {
+      setReminderEnabled(reminderSettings.enabled);
+      setReminderOffset(reminderSettings.offsetMinutes);
     }
-  ];
+    setOpenReminderModal(true);
+  }
+
+  function handleSaveReminders(e: React.FormEvent<HTMLFormElement>) {
+    e.preventDefault();
+    const normalizedOffset = Math.max(5, Math.round(reminderOffset || 0));
+    setReminderOffset(normalizedOffset);
+    saveSettings(
+      { enabled: reminderEnabled, offsetMinutes: normalizedOffset },
+      {
+        onSuccess: (settings) => {
+          setOpenReminderModal(false);
+          setReminderEnabled(settings.enabled);
+          setReminderOffset(settings.offsetMinutes);
+          showToast("Recordatorios actualizados ✅", "success");
+        },
+        onError: (err) => {
+          showToast(
+            err.message || "No se pudieron guardar los recordatorios",
+            "error"
+          );
+        }
+      }
+    );
+  }
+
+  useEffect(() => {
+    if (tpError) {
+      showToast(tpError, "error");
+    }
+  }, [tpError, showToast]);
+
+  const effectiveWeekLoading = loadingWeek || isFetchingWeek;
 
   return (
     <>
@@ -180,7 +227,7 @@ export default function DashboardPage() {
             <Card>
               <CardHeader
                 title="Acción rápida"
-                description="Genera tu comida ideal post-entreno en menos de 10s"
+                description="Genera tu plan diario completo en menos de 10s"
               />
               <CardContent>
                 <Button
@@ -188,7 +235,7 @@ export default function DashboardPage() {
                   isLoading={isLoading}
                   onClick={handleOpenPlanModal}
                 >
-                  Generar plan post-entreno
+                  Generar plan diario
                 </Button>
               </CardContent>
             </Card>
@@ -202,16 +249,33 @@ export default function DashboardPage() {
                 description="Resumen de tu recomendación más reciente"
               />
               <CardContent className="space-y-3">
-                {lastCreated ? (
-                  <Alert
-                    variant="success"
-                    title="Plan generado correctamente"
-                    description={`${lastCreated.title} (${lastCreated.category}) ya está listo.`}
-                  />
+                {isLoadingHistory ? (
+                  <div className="flex items-center gap-2 text-sm text-[var(--text-secondary)]">
+                    <Loader size="sm" />
+                    <span>Cargando último plan...</span>
+                  </div>
+                ) : lastCreated ? (
+                  <div className="space-y-3">
+                    <Alert
+                      variant="success"
+                      title="Plan generado correctamente"
+                      description={`${lastCreated.title} (${lastCreated.category}) ya está listo.`}
+                    />
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      className="px-0 text-sm font-medium text-[var(--text-primary)] underline underline-offset-4"
+                      onClick={() => {
+                        window.location.href = `/app/resources/${lastCreated.id}`;
+                      }}
+                    >
+                      Ver plan completo →
+                    </Button>
+                  </div>
                 ) : (
                   <ul className="text-sm leading-relaxed text-[var(--text-secondary)] space-y-1">
                     <li>• Aún no has generado ningún plan hoy</li>
-                    <li>• Pulsa “Generar plan post-entreno”</li>
+                    <li>• Pulsa “Generar plan diario”</li>
                     <li>• Lo guardaremos en tu historial</li>
                   </ul>
                 )}
@@ -224,7 +288,7 @@ export default function DashboardPage() {
             <Card className="md:col-span-2 xl:col-span-1">
               <CardHeader
                 title="Tu adherencia (últimos 7 días)"
-                description="¿Te estás alimentando como tu objetivo necesita?"
+                description="¿Estás siguiendo tu plan diario como lo prescribe tu objetivo?"
               />
               <CardContent className="space-y-4">
                 <AdherenceStatBlock
@@ -244,6 +308,41 @@ export default function DashboardPage() {
         </div>
       </MotionWrapper>
 
+      <MotionWrapper keyId="reminders-card">
+        <Card className="mt-8">
+          <CardHeader
+            title="Recordatorios post-entreno"
+            description="Recibe un aviso para tomar tu nutrición crítica tras cada sesión."
+          />
+          <CardContent className="space-y-3">
+            {reminderError && (
+              <Alert
+                variant="error"
+                title="No se pudo cargar la configuración"
+                description={reminderError.message}
+              />
+            )}
+
+            <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+              <div className="text-sm leading-relaxed text-[var(--text-secondary)]">
+                {loadingReminders
+                  ? "Cargando estado de recordatorios..."
+                  : `Recordatorios post-entreno: ${reminderEnabled ? "Activados" : "Desactivados"} · aviso ${reminderOffset} min después del entreno`}
+              </div>
+
+              <Button
+                variant="ghost"
+                className="w-full sm:w-auto"
+                onClick={handleOpenReminderConfig}
+                disabled={loadingReminders}
+              >
+                Configurar
+              </Button>
+            </div>
+          </CardContent>
+        </Card>
+      </MotionWrapper>
+
       {/* === NUEVA SECCIÓN: SINCRONIZACIÓN TRAININGPEAKS + CALENDARIO === */}
       <MotionWrapper keyId="weekly-plan">
         <Card className="mt-8">
@@ -251,15 +350,17 @@ export default function DashboardPage() {
             title="Plan semanal"
             description={
               connected
-                ? "Entrenos sincronizados y nutrición recomendada por IA."
-                : "Conecta TrainingPeaks para ver tus sesiones reales y la nutrición sugerida por IA."
+                ? "Tus entrenos planificados esta semana y la nutrición recomendada alrededor de cada sesión (pre, post, snacks y recuperación)."
+                : "Conecta TrainingPeaks para ver tus entrenos planificados y la nutrición de todo el día alrededor de cada sesión."
             }
           />
           <CardContent className="space-y-4">
             {/* Header de acciones: conectar TrainingPeaks */}
             <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
               <div className="text-[var(--text-secondary)] text-xs leading-relaxed">
-                {connected
+                {isConnecting
+                  ? "Conectando con TrainingPeaks..."
+                  : connected
                   ? "TrainingPeaks conectado ✅"
                   : "Aún no conectado"}
               </div>
@@ -288,14 +389,41 @@ export default function DashboardPage() {
               </div>
             </div>
 
+            {tpError && (
+              <Alert
+                variant="error"
+                title="Error sincronizando TrainingPeaks"
+                description={tpError}
+              />
+            )}
+
             {/* Calendario semanal */}
-            <WeeklyCalendar week={mockWeek} />
+            {effectiveWeekLoading ? (
+              <div className="flex items-center gap-2 text-sm text-[var(--text-secondary)]">
+                <Loader size="sm" />
+                <span>Cargando plan semanal...</span>
+              </div>
+            ) : week.length > 0 ? (
+              <WeeklyCalendar week={week} />
+            ) : weekError ? (
+              <Alert
+                variant="error"
+                title="No se pudo cargar tu semana"
+                description={weekError}
+              />
+            ) : (
+              <div className="rounded-md border border-dashed border-border p-6 text-center text-sm text-[var(--text-secondary)]">
+                Aún no tienes sesiones planificadas esta semana.
+                <br />
+                Conecta TrainingPeaks o añade entrenos manualmente para ver la
+                nutrición recomendada alrededor de cada sesión.
+              </div>
+            )}
 
             <p className="text-[var(--text-secondary)] text-[11px] leading-relaxed">
-              Muy pronto: leeremos automáticamente tus entrenos planificados
-              desde TrainingPeaks y generaremos para cada uno:
-              pre-entreno → post-entreno → recuperación tarde. Sin que tengas
-              que pensar qué comer.
+              Muy pronto: leeremos automáticamente tus entrenos futuros desde
+              TrainingPeaks y generaremos la nutrición de todo el día alrededor
+              de cada sesión. No tendrás que pensar qué comer.
             </p>
           </CardContent>
         </Card>
@@ -307,17 +435,17 @@ export default function DashboardPage() {
           <Card>
             <CardHeader
               title="Próximos pasos"
-              description="Recomendado para mejorar resultados:"
+              description="Recomendado para sacar más partido a tu plan diario:"
             />
             <CardContent>
               <ol className="list-decimal pl-4 text-sm text-[var(--text-primary)] space-y-2">
                 <li>
                   {connected
-                    ? "Sincroniza nuevos entrenos desde TrainingPeaks cuando cambie tu plan"
+                    ? "Sincroniza nuevos entrenos desde TrainingPeaks cuando cambie tu planificación"
                     : "Conecta tu cuenta TrainingPeaks"}
                 </li>
-                <li>Activa recordatorios post-entreno</li>
-                <li>Revisa tu recuperación (sueño, fatiga, dolor muscular)</li>
+                <li>Activa los recordatorios post-entreno para no saltarte la ventana crítica.</li>
+                <li>Registra si seguiste tu plan diario tras cada entreno (Tomado / Me lo salté).</li>
               </ol>
             </CardContent>
           </Card>
@@ -325,23 +453,79 @@ export default function DashboardPage() {
           <Card>
             <CardHeader
               title="Siguiente entreno"
-              description="Cuando acabes tu próxima sesión, vuelve aquí y marca adherencia."
+              description="Cuando acabes tu próxima sesión, vuelve y registra tu adherencia."
             />
             <CardContent className="text-sm text-[var(--text-secondary)] leading-relaxed">
-              Cuanto más constante seas registrando si cumpliste (Tomado / Me
-              lo salté), más precisa será tu adherencia y mejor podremos
-              ajustar tus macros para la semana.
+              Después de cada entreno, marca si seguiste el plan diario
+              (Tomado / Me lo salté). Con esos datos afinamos las
+              recomendaciones y el reparto de macros a lo largo del día.
             </CardContent>
           </Card>
         </div>
       </MotionWrapper>
 
-      {/* === MODAL: CREAR PLAN POST-ENTRENO === */}
+      {/* === MODAL: CONFIGURAR RECORDATORIOS === */}
+      <Modal
+        open={openReminderModal}
+        onClose={() => setOpenReminderModal(false)}
+        title="Configurar recordatorios post-entreno"
+        description="Decide si quieres recibir un aviso automático y con cuánto margen tras el entreno."
+        size="sm"
+      >
+        <form className="space-y-4" onSubmit={handleSaveReminders}>
+          <div className="flex items-center justify-between rounded-md border border-border bg-[var(--surface)] px-3 py-2">
+            <span className="text-sm font-medium text-[var(--text-primary)]">
+              Estado
+            </span>
+            <label className="inline-flex items-center gap-2 text-sm text-[var(--text-secondary)]">
+              <input
+                type="checkbox"
+                checked={reminderEnabled}
+                onChange={(e) => setReminderEnabled(e.target.checked)}
+                className="h-4 w-4 rounded border-border"
+              />
+              {reminderEnabled ? "Activados" : "Desactivados"}
+            </label>
+          </div>
+
+          <FormField
+            id="reminder-offset"
+            label="Minutos después del entreno"
+            hint="Te avisaremos pasado este tiempo para que tomes la nutrición clave tras entrenar."
+          >
+            <Input
+              type="number"
+              min={5}
+              step={5}
+              value={reminderOffset}
+              onChange={(e) => {
+                const parsed = parseInt(e.target.value, 10);
+                setReminderOffset(Number.isNaN(parsed) ? 0 : parsed);
+              }}
+            />
+          </FormField>
+
+          <div className="flex justify-end gap-2">
+            <Button
+              type="button"
+              variant="ghost"
+              onClick={() => setOpenReminderModal(false)}
+            >
+              Cancelar
+            </Button>
+            <Button type="submit" isLoading={isSavingReminder}>
+              Guardar
+            </Button>
+          </div>
+        </form>
+      </Modal>
+
+      {/* === MODAL: CREAR PLAN DIARIO === */}
       <Modal
         open={openPlanModal}
         onClose={() => setOpenPlanModal(false)}
-        title="Plan post-entreno"
-        description="Cuéntame tu entreno de hoy y te doy la comida ideal para recuperar mejor."
+        title="Plan diario personalizado"
+        description="Cuéntame tu entreno de hoy y te doy la nutrición completa del día, comida por comida."
         size="md"
       >
         <CreatePostWorkoutPlanForm
@@ -368,8 +552,8 @@ export default function DashboardPage() {
             <>
               <p>
                 Te vamos a pedir permiso para leer tu plan de entrenos. Con esa
-                info generaremos tu nutrición personalizada antes y después de
-                cada sesión.
+                info generaremos tu nutrición personalizada de TODO el día
+                alrededor de cada sesión.
               </p>
               <p className="text-[var(--text-secondary)] text-xs leading-relaxed">
                 Nunca publicamos nada en tu cuenta TrainingPeaks. Sólo leemos.
@@ -388,6 +572,20 @@ export default function DashboardPage() {
           )}
         </div>
       </Modal>
+
+      {toast && (
+        <div className="fixed bottom-6 right-6 z-[200] rounded-lg border border-border bg-[var(--surface)] px-4 py-3 shadow-lg">
+          <span
+            className={`text-sm font-medium ${
+              toast.variant === "success"
+                ? "text-emerald-500"
+                : "text-red-500"
+            }`}
+          >
+            {toast.message}
+          </span>
+        </div>
+      )}
     </>
   );
 }
@@ -408,7 +606,7 @@ function AdherenceStatBlock({
           {percent}%
         </div>
         <div className="text-[var(--text-secondary)] text-sm leading-relaxed">
-          Adherencia nutricional tus últimos 7 días.
+          Adherencia nutricional de tus últimos 7 días.
           <br />
           {takenCount} / {total} planes seguidos.
         </div>
@@ -430,7 +628,7 @@ function AdherenceActionBlock({
     <MotionWrapper keyId="adherence-actions">
       <div className="space-y-2">
         <div className="text-xs text-[var(--text-secondary)] leading-relaxed">
-          ¿Has seguido el último plan recomendado?
+          ¿Seguiste el último plan diario recomendado?
         </div>
 
         <div className="flex flex-wrap gap-2">
@@ -454,7 +652,7 @@ function AdherenceActionBlock({
 
         {disabled && (
           <div className="text-[var(--text-secondary)] text-[11px]">
-            Genera primero un plan post-entreno para registrar adherencia.
+            Genera primero un plan diario para registrar adherencia.
           </div>
         )}
       </div>
@@ -462,17 +660,3 @@ function AdherenceActionBlock({
   );
 }
 
-// Generador de título comercial del plan post-entreno
-function buildPlanTitle(data: {
-  workoutType: string;
-  durationMin: number;
-  goal: string;
-  weightKg: number;
-  dietPrefs: string;
-  notes: string;
-}) {
-  if (data.goal === "musculo") return "Recuperación muscular alta en proteína";
-  if (data.goal === "grasa") return "Recuperación ligera baja en carbo";
-  if (data.goal === "rendimiento") return "Recarga glucógeno rápida";
-  return "Plan post-entreno personalizado";
-}

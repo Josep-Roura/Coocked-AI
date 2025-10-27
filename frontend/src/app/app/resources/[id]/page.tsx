@@ -5,6 +5,7 @@ import { useParams, useRouter } from "next/navigation";
 import { Loader } from "@/components/feedback/Loader";
 import { Alert } from "@/components/feedback/Alert";
 import { Button } from "@/components/ui/button";
+import { type PlanDetail } from "@/lib/api/resources";
 
 export default function ResourceDetailPage() {
   const params = useParams<{ id: string }>();
@@ -69,37 +70,73 @@ export default function ResourceDetailPage() {
         </p>
       </header>
 
-      <section className="space-y-4">
-        <div>
+      <section className="space-y-6">
+        <div className="space-y-2">
           <h2 className="text-sm font-semibold text-[var(--text-primary)]">
-            Qué comer ahora
+            Datos del entreno de referencia
           </h2>
-          <p className="text-[var(--text-primary)] leading-relaxed">
-            {data.meal}
-          </p>
-          <p className="text-[var(--text-secondary)] text-xs leading-relaxed mt-1">
-            {data.timingNote}
-          </p>
-        </div>
-
-        <div>
-          <h2 className="text-sm font-semibold text-[var(--text-primary)]">
-            Macros estimadas
-          </h2>
-          <ul className="text-sm text-[var(--text-primary)] leading-relaxed mt-2 space-y-1">
-            <li>Proteína: {data.proteinGr} g</li>
-            <li>Carbohidratos: {data.carbsGr} g</li>
-            <li>Grasas: {data.fatsGr} g</li>
+          <ul className="text-sm text-[var(--text-secondary)] leading-relaxed space-y-1">
+            {data.workoutType && <li>Sesión: {data.workoutType}</li>}
+            {typeof data.durationMin === "number" && (
+              <li>Duración: {data.durationMin} min</li>
+            )}
+            {data.goal && <li>Objetivo declarado: {data.goal}</li>}
+            {data.dietPrefs && <li>Preferencias: {data.dietPrefs}</li>}
+            {typeof data.weightKg === "number" && (
+              <li>Peso de referencia: {data.weightKg} kg</li>
+            )}
+            {data.notes && <li>Notas: {data.notes}</li>}
           </ul>
         </div>
 
-        <div>
+        <div className="space-y-3">
           <h2 className="text-sm font-semibold text-[var(--text-primary)]">
-            Por qué esto
+            Plan nutricional del día
           </h2>
-          <p className="text-[var(--text-secondary)] text-sm leading-relaxed">
-            {data.rationale}
-          </p>
+          <div className="space-y-3">
+            {buildSections(data).map((section) => (
+              <div
+                key={section.key}
+                className="rounded-md border border-border bg-[var(--surface)] p-4 space-y-2"
+              >
+                <div className="flex items-start justify-between gap-3">
+                  <div className="flex items-center gap-2">
+                    <span className="inline-flex items-center rounded-full border border-border bg-white/20 px-2 py-[2px] text-[10px] font-semibold uppercase tracking-wide text-[var(--text-secondary)]">
+                      {section.badge}
+                    </span>
+                    <h3 className="text-sm font-semibold text-[var(--text-primary)]">
+                      {section.title}
+                    </h3>
+                  </div>
+                  <span className="text-[var(--text-secondary)] text-[11px] leading-tight text-right">
+                    {section.content.timing}
+                  </span>
+                </div>
+
+                <p className="text-sm text-[var(--text-primary)] leading-relaxed">
+                  {section.content.nutrition}
+                </p>
+
+                {section.content.example && (
+                  <p className="text-[var(--text-secondary)] text-xs leading-relaxed">
+                    Ejemplo: {section.content.example}
+                  </p>
+                )}
+
+                {section.content.supplements && (
+                  <p className="text-[var(--text-secondary)] text-xs leading-relaxed">
+                    Suplementación: {section.content.supplements}
+                  </p>
+                )}
+
+                {section.content.notes && (
+                  <p className="text-[var(--text-secondary)] text-xs leading-relaxed">
+                    Notas: {section.content.notes}
+                  </p>
+                )}
+              </div>
+            ))}
+          </div>
         </div>
       </section>
     </div>
@@ -114,4 +151,37 @@ function formatDate(iso: string) {
   const hours = String(d.getHours()).padStart(2, "0");
   const mins = String(d.getMinutes()).padStart(2, "0");
   return `${day}/${month}/${year} ${hours}:${mins}`;
+}
+
+function buildSections(data: PlanDetail) {
+  const plan = data.fullDayPlan;
+  return [
+    { key: "pre", title: "Pre-entreno", badge: "PRE", content: plan.preWorkout },
+    {
+      key: "post",
+      title: "Inmediato post-entreno",
+      badge: "POST",
+      content: plan.intraOrImmediatePost
+    },
+    {
+      key: "first",
+      title: "Primera comida sólida",
+      badge: "COMIDA",
+      content: plan.firstMeal
+    },
+    { key: "snack", title: "Snack", badge: "SNACK", content: plan.snack },
+    {
+      key: "lunch",
+      title: "Comida principal",
+      badge: "COMIDA",
+      content: plan.lunch
+    },
+    { key: "dinner", title: "Cena", badge: "CENA", content: plan.dinner },
+    {
+      key: "sleep",
+      title: "Antes de dormir",
+      badge: "DESCANSO",
+      content: plan.beforeSleep
+    }
+  ];
 }

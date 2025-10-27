@@ -1,58 +1,51 @@
 "use client";
 
-import { useEffect, useState, useCallback } from "react";
+import { useCallback, useEffect, useState } from "react";
+import { useRouter } from "next/navigation";
+import {
+  createDemoLogin,
+  getCurrentUserIdClient,
+  isAuthenticatedClient,
+  logoutDemo
+} from "@/lib/auth/userSession";
 
 /**
- * Hook de sesión mock.
- * - Usa localStorage ("cookedai_auth" = "1") para persistir login.
- * - Expone { ready, isAuthenticated, login, logout }.
- *
- * Nota: `ready` indica "ya comprobé el entorno cliente".
- * Esto es útil para no redirigir demasiado pronto en SSR.
+ * Hook de sesión demo basado en localStorage + cookie.
+ * Mantiene la interfaz { ready, isAuthenticated, login, logout }.
  */
-
-function readInitialAuth(): boolean {
-  if (typeof window === "undefined") {
-    return false;
-  }
-  try {
-    return window.localStorage.getItem("cookedai_auth") === "1";
-  } catch {
-    return false;
-  }
-}
-
 export function useSession() {
-  // hidratamos isAuthenticated directamente desde localStorage en primera renderización cliente
-  const [isAuthenticated, setIsAuthenticated] = useState<boolean>(
-    readInitialAuth
-  );
+  const router = useRouter();
+  const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [ready, setReady] = useState(false);
 
-  // Marcamos que ya hemos evaluado en cliente
   useEffect(() => {
-    // Este efecto ya no llama setIsAuthenticated() directamente
-    // a menos que detectemos un desajuste raro.
-    const currently = readInitialAuth();
-    if (currently !== isAuthenticated) {
-      setIsAuthenticated(currently);
-    }
+    setIsAuthenticated(isAuthenticatedClient());
     setReady(true);
-  }, [isAuthenticated]);
-
-  const login = useCallback(() => {
-    if (typeof window !== "undefined") {
-      window.localStorage.setItem("cookedai_auth", "1");
-    }
-    setIsAuthenticated(true);
   }, []);
+
+  const login = useCallback(
+    (email: string) => {
+      if (typeof window !== "undefined") {
+        const { userId } = createDemoLogin(email);
+        document.cookie = `cookedai_user_id=${userId}; path=/; max-age=31536000; SameSite=Lax`;
+        document.cookie = "cookedai_auth=1; path=/; max-age=31536000; SameSite=Lax";
+        getCurrentUserIdClient();
+      }
+      setIsAuthenticated(true);
+      router.replace("/app");
+    },
+    [router]
+  );
 
   const logout = useCallback(() => {
     if (typeof window !== "undefined") {
-      window.localStorage.removeItem("cookedai_auth");
+      logoutDemo();
+      document.cookie = "cookedai_auth=; path=/; max-age=0";
+      document.cookie = "cookedai_user_id=; path=/; max-age=0";
     }
     setIsAuthenticated(false);
-  }, []);
+    router.replace("/login");
+  }, [router]);
 
   return {
     ready,

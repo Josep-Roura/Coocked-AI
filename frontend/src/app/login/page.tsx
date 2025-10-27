@@ -45,15 +45,7 @@ function LoginContent() {
     e.preventDefault();
     setLoading(true);
 
-    // 1. Set cookie que lee el middleware del lado servidor
-    document.cookie = "cookedai_auth=1; path=/; SameSite=Lax";
-
-    // 2. Marca sesión en localStorage / hook
-    login();
-
-    // 3. Redirige
-    const redirectTo = searchParams.get("redirectTo") || "/app";
-    router.replace(redirectTo);
+    login(email);
   }
 
   return (
@@ -64,8 +56,8 @@ function LoginContent() {
             Accede a tu panel
           </h1>
           <p className="text-[var(--text-secondary)] text-sm leading-relaxed">
-            Revisa adherencia, tu calendario semanal y la nutrición de cada
-            entreno.
+            Genera tu plan diario, registra adherencia y activa recordatorios
+            post-entreno.
           </p>
         </header>
 

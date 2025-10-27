@@ -350,8 +350,8 @@ export default function DashboardPage() {
             title="Plan semanal"
             description={
               connected
-                ? "Entrenos sincronizados y nutrición recomendada por IA."
-                : "Conecta TrainingPeaks para ver tus sesiones reales y la nutrición sugerida por IA."
+                ? "Entrenos sincronizados y nutrición diaria recomendada por IA."
+                : "Conecta TrainingPeaks para ver tus sesiones reales y la nutrición diaria sugerida por IA."
             }
           />
           <CardContent className="space-y-4">
@@ -421,9 +421,9 @@ export default function DashboardPage() {
             )}
 
             <p className="text-[var(--text-secondary)] text-[11px] leading-relaxed">
-              Muy pronto: leeremos automáticamente tus entrenos planificados
-              desde TrainingPeaks y generaremos para cada uno la nutrición de
-              todo el día.
+              Leeremos tus entrenos planificados y generaremos automáticamente
+              la nutrición de todo tu día alrededor de cada sesión. No tendrás
+              que pensar qué comer.
             </p>
           </CardContent>
         </Card>
@@ -491,7 +491,7 @@ export default function DashboardPage() {
           <FormField
             id="reminder-offset"
             label="Minutos después del entreno"
-            hint="Te avisaremos pasado este tiempo para que tomes la nutrición clave."
+            hint="Te avisaremos pasado este tiempo para que tomes la nutrición clave tras entrenar."
           >
             <Input
               type="number"
@@ -520,7 +520,7 @@ export default function DashboardPage() {
         </form>
       </Modal>
 
-      {/* === MODAL: CREAR PLAN POST-ENTRENO === */}
+      {/* === MODAL: CREAR PLAN DIARIO === */}
       <Modal
         open={openPlanModal}
         onClose={() => setOpenPlanModal(false)}
@@ -552,8 +552,8 @@ export default function DashboardPage() {
             <>
               <p>
                 Te vamos a pedir permiso para leer tu plan de entrenos. Con esa
-                info generaremos tu nutrición personalizada antes y después de
-                cada sesión.
+                info generaremos tu nutrición personalizada de TODO el día
+                alrededor de cada sesión.
               </p>
               <p className="text-[var(--text-secondary)] text-xs leading-relaxed">
                 Nunca publicamos nada en tu cuenta TrainingPeaks. Sólo leemos.

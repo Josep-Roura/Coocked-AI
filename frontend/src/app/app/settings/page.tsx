@@ -47,7 +47,7 @@ export default function SettingsPage() {
         {tab === "appearance" && <AppearanceForm />}
         {tab === "notifications" && (
           <div className="text-sm text-[var(--text-secondary)]">
-            Próximamente: resumen diario post-entreno, recordatorios de
+            Próximamente: resumen diario completo, recordatorios de
             recuperación y alertas de hidratación.
           </div>
         )}

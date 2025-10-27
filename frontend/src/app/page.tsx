@@ -9,16 +9,15 @@ export default function MarketingLandingPage() {
       <header className="grid gap-8 lg:grid-cols-2 lg:items-center">
         <div className="space-y-6">
           <h1 className="text-3xl font-semibold leading-tight sm:text-4xl">
-            Tu comida post-entreno,
+            Tu plan diario nutricional,
             <br className="hidden sm:block" />
-            optimizada por IA en 10 segundos.
+            optimizado por IA en 10 segundos.
           </h1>
 
           <p className="text-[var(--text-secondary)] text-base leading-relaxed max-w-lg">
-            Cooked-AI analiza tu entreno, tu objetivo físico y tus
-            preferencias alimentarias para decirte exactamente qué comer
-            después de entrenar: receta, macros, y por qué eso acelera tu
-            recuperación.
+            Cooked-AI analiza tu entreno, objetivo y preferencias para darte la
+            nutrición completa de TODO el día: qué tomar antes, justo después,
+            snacks, comidas principales y cena.
           </p>
 
           <div className="flex flex-col sm:flex-row gap-3">
@@ -50,7 +49,7 @@ export default function MarketingLandingPage() {
         {/* Mini "screenshot" estilo preview del dashboard */}
         <div className="relative rounded-lg border border-border bg-surface shadow-lg p-4 text-sm max-w-md w-full mx-auto">
           <div className="text-xs text-[var(--text-secondary)] mb-2">
-            Último plan generado
+            Último plan diario generado
           </div>
 
           <div className="rounded-lg border border-border bg-white/60 dark:bg-white/5 p-4 shadow-sm">
@@ -61,29 +60,30 @@ export default function MarketingLandingPage() {
               Objetivo: ganar músculo
             </div>
 
-            <div className="mt-4 text-[var(--text-primary)] text-sm leading-relaxed">
-              Batido whey con agua + crema de arroz instantánea + frutos
-              rojos. Tómalo en los próximos 30 minutos.
-            </div>
-
-            <ul className="mt-4 text-[var(--text-primary)] text-xs grid grid-cols-3 gap-2">
-              <li className="rounded-md border border-border bg-surface p-2 text-center">
-                <div className="font-semibold text-[var(--text-primary)]">
-                  40g
+            <ul className="mt-4 space-y-3 text-[var(--text-primary)] text-sm">
+              <li className="rounded-md border border-border bg-surface p-3">
+                <div className="text-xs uppercase tracking-wide text-[var(--text-secondary)]">
+                  PRE · 30 min antes
                 </div>
-                <div className="text-[var(--text-secondary)]">Proteína</div>
+                Carbo rápido + electrolitos + 200mg cafeína ligera.
               </li>
-              <li className="rounded-md border border-border bg-surface p-2 text-center">
-                <div className="font-semibold text-[var(--text-primary)]">
-                  60g
+              <li className="rounded-md border border-border bg-surface p-3">
+                <div className="text-xs uppercase tracking-wide text-[var(--text-secondary)]">
+                  POST · 0-30 min
                 </div>
-                <div className="text-[var(--text-secondary)]">Carbo</div>
+                Batido 40g whey + 70g arroz/jugo + sodio extra si sudaste mucho.
               </li>
-              <li className="rounded-md border border-border bg-surface p-2 text-center">
-                <div className="font-semibold text-[var(--text-primary)]">
-                  6g
+              <li className="rounded-md border border-border bg-surface p-3">
+                <div className="text-xs uppercase tracking-wide text-[var(--text-secondary)]">
+                  COMIDA · 60-90 min
                 </div>
-                <div className="text-[var(--text-secondary)]">Grasas</div>
+                Arroz blanco + pollo + aceite de oliva + verduras fáciles.
+              </li>
+              <li className="rounded-md border border-border bg-surface p-3">
+                <div className="text-xs uppercase tracking-wide text-[var(--text-secondary)]">
+                  CENA · Antes de dormir
+                </div>
+                Huevos + verduras salteadas + caseína suave para la noche.
               </li>
             </ul>
           </div>
@@ -96,22 +96,22 @@ export default function MarketingLandingPage() {
       <section className="grid gap-8 sm:grid-cols-2 lg:grid-cols-3">
         <FeatureCard
           title="Recupera mejor"
-          desc="Evita perder músculo y baja la inflamación después de entrenar. Te damos la receta exacta, no teoría."
+          desc="Evita perder músculo y baja la inflamación planificando cada comida crítica del día."
         />
         <FeatureCard
           title="Tu objetivo, no genérico"
-          desc="Ganar músculo, quemar grasa o simplemente llegar fresco al siguiente entreno. Cambia el objetivo y cambia la comida."
+          desc="Músculo, déficit o rendimiento. Adaptamos pre, post, snacks y cena a lo que necesitas."
         />
         <FeatureCard
           title="Sin pensar"
-          desc="¿Acabas de salir del gym y no sabes qué comer? Lo generas en el móvil en 10 segundos."
+          desc="Sales del gym y sabes qué comer el resto del día en 10 segundos."
         />
       </section>
 
       {/* CTA final */}
       <footer className="text-center space-y-4">
         <div className="text-xl font-semibold leading-tight">
-          ¿Entrenas? Te decimos qué comer ahora mismo.
+          ¿Entrenas? Te decimos qué comer en todo tu día.
         </div>
         <Button
           className="h-11 px-5 text-base font-medium"

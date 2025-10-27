@@ -68,7 +68,7 @@ export function Sidebar() {
         <SidebarLink
           href="/app/resources"
           icon={<Folder className="h-4 w-4" />}
-          label="Planes post-entreno"
+          label="Planes diarios"
           showLabel={isExpanded || isMobile}
         />
 

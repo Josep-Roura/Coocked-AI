@@ -22,8 +22,8 @@ export default function ResourcesPage() {
           Tus planes diarios
         </h1>
         <p className="text-[var(--text-secondary)] text-sm leading-relaxed">
-          Revisa lo que tu cuerpo necesita en cada momento del día según tu
-          entreno y objetivo actual.
+          Cada día que entrenas generamos tu nutrición completa: pre, post,
+          snacks, comidas y cena.
         </p>
       </header>
 

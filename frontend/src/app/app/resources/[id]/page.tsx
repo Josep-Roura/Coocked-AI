@@ -73,7 +73,7 @@ export default function ResourceDetailPage() {
       <section className="space-y-6">
         <div className="space-y-2">
           <h2 className="text-sm font-semibold text-[var(--text-primary)]">
-            Datos del entreno
+            Datos del entreno de referencia
           </h2>
           <ul className="text-sm text-[var(--text-secondary)] leading-relaxed space-y-1">
             {data.workoutType && <li>Sesión: {data.workoutType}</li>}

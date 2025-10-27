@@ -7,13 +7,13 @@ import { Analytics } from "@/components/Analytics";
 
 export const metadata: Metadata = {
   metadataBase: new URL("https://cooked-ai.local"),
-  title: "Cooked-AI – Tu comida post-entreno optimizada por IA",
+  title: "Cooked-AI – Tu plan diario nutricional optimizado por IA",
   description:
-    "Genera en segundos el plan nutricional perfecto según tu entreno, objetivo y preferencias. IA para atletas reales.",
+    "Genera en segundos la nutrición completa de tu día según entreno, objetivo y preferencias. IA para atletas reales.",
   openGraph: {
     title: "Cooked-AI",
     description:
-      "Tu comida post-entreno optimizada por IA. Recupera mejor y rinde más.",
+      "Tu plan diario nutricional optimizado por IA. Recupera mejor y rinde más.",
     url: "https://cooked-ai.local",
     siteName: "Cooked-AI",
     images: [
@@ -31,7 +31,7 @@ export const metadata: Metadata = {
     card: "summary_large_image",
     title: "Cooked-AI",
     description:
-      "Genera tu comida post-entreno personalizada en segundos.",
+      "Genera tu plan diario personalizado en segundos.",
     images: ["/og-image.png"]
   },
   icons: {

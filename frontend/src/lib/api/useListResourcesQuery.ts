@@ -1,15 +1,15 @@
 "use client";
 
 import { useQuery } from "@tanstack/react-query";
-import { listResourcesAPI, type CreatedResource } from "./resources";
+import { listResourcesAPI, type PlanSummary } from "./resources";
 
 export function useListResourcesQuery() {
-  const query = useQuery<CreatedResource[], Error>({
+  const query = useQuery<PlanSummary[], Error>({
     queryKey: ["resources", "list"],
     queryFn: async () => {
       return listResourcesAPI();
     },
-    staleTime: 1000 * 30 // 30s - evita re-fetch agresivo si navegas entre páginas
+    staleTime: 1000 * 30
   });
 
   return {

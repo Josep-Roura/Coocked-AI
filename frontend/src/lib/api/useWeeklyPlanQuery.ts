@@ -1,7 +1,19 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { WeeklyWorkout } from "@/lib/types/training";
+
+export type WeeklyWorkout = {
+  id: string;
+  day: number; // 0 = Lunes ... 6 = Domingo
+  start: string;
+  end: string;
+  type: string;
+  intensity?: "baja" | "media" | "alta";
+  nutrition: Array<{
+    label: string;
+    advice: string;
+  }>;
+};
 
 type WeeklyPlanResponse = {
   ok: boolean;
@@ -19,21 +31,25 @@ export function useWeeklyPlanQuery() {
     async function load() {
       try {
         setLoading(true);
+
         const res = await fetch("/api/week");
         if (!res.ok) {
           throw new Error("Error cargando semana");
         }
         const json = (await res.json()) as WeeklyPlanResponse;
+
         if (!cancelled) {
           setData(json.week || []);
           setError(undefined);
         }
-      } catch (err) {
+      } catch {
         if (!cancelled) {
           setError("No se pudo cargar el plan semanal");
         }
       } finally {
-        if (!cancelled) setLoading(false);
+        if (!cancelled) {
+          setLoading(false);
+        }
       }
     }
 

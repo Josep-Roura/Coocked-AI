@@ -1,26 +1,43 @@
 "use client";
 
-import { useMutation, useQueryClient } from "@tanstack/react-query";
-import { logAdherenceAPI } from "./adherence";
+import { useState } from "react";
+
+type MarkAdherenceInput = {
+  resourceId: string;
+  taken: boolean;
+};
 
 export function useAdherenceMutation() {
-  const qc = useQueryClient();
+  const [isSaving, setIsSaving] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
-  const mutation = useMutation({
-    mutationFn: async (payload: { resourceId: string; taken: boolean }) => {
-      return logAdherenceAPI(payload);
-    },
-    onSuccess: () => {
-      // invalidamos las métricas de adherencia para que se refresquen
-      qc.invalidateQueries({
-        queryKey: ["adherence", "stats7d"]
+  async function markAdherence(input: MarkAdherenceInput) {
+    try {
+      setIsSaving(true);
+      setError(null);
+
+      const res = await fetch("/api/adherence", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          planId: input.resourceId,
+          taken: input.taken
+        })
       });
-    }
-  });
 
-  return {
-    markAdherence: mutation.mutate,
-    isSaving: mutation.isPending,
-    error: mutation.error
-  };
+      if (!res.ok) {
+        throw new Error("Error guardando adherencia");
+      }
+
+      // Leemos y descartamos la respuesta sólo para asegurar que no explota
+      await res.json();
+    } catch (err) {
+      const e = err instanceof Error ? err : new Error("Error desconocido");
+      setError(e.message);
+    } finally {
+      setIsSaving(false);
+    }
+  }
+
+  return { markAdherence, isSaving, error };
 }

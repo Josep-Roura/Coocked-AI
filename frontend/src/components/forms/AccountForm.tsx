@@ -1,140 +1,79 @@
 "use client";
 
-import { useEffect, useState } from "react";
-import { FormField } from "@/components/ui/form-field";
-import { Input } from "@/components/ui/input";
-import { Select } from "@/components/ui/select";
+import { useState } from "react";
 import { Button } from "@/components/ui/button";
-import { Alert } from "@/components/feedback/Alert";
-import { Loader } from "@/components/feedback/Loader";
-import { useUserProfileQuery } from "@/lib/api/useUserProfileQuery";
-import { useUpdateProfileMutation } from "@/lib/api/useUpdateProfileMutation";
 
-export function AccountForm() {
-  const { data: profile, isLoading: loadingProfile, error: profileError } =
-    useUserProfileQuery();
+export type UserProfile = {
+  name?: string;
+  email?: string;
+  language?: string;
+};
 
-  const [localName, setLocalName] = useState("");
-  const [localEmail, setLocalEmail] = useState("");
-  const [language, setLanguage] = useState("es");
-
-  const [successMsg, setSuccessMsg] = useState<string | null>(null);
-
-  const { saveProfile, isSaving, error: saveError } =
-    useUpdateProfileMutation({
-      onSuccess: () => {
-        setSuccessMsg("Perfil actualizado correctamente.");
-        setTimeout(() => setSuccessMsg(null), 3000);
-      }
-    });
-
-  // rellenar inicial cuando llega el perfil
-  useEffect(() => {
-    if (profile) {
-        setLocalName(profile.name ?? "");
-        setLocalEmail(profile.email ?? "");
-        setLanguage(profile.language ?? "es");
-    }
-    }, [profile]);
-
-
+export function AccountForm({
+  profile,
+  onSave
+}: {
+  profile: UserProfile | null;
+  onSave: (data: { name: string; email: string; language: string }) => void;
+}) {
+  // estado local inicializado una vez desde profile
+  const [localName, setLocalName] = useState<string>(profile?.name ?? "");
+  const [localEmail, setLocalEmail] = useState<string>(profile?.email ?? "");
+  const [language, setLanguage] = useState<string>(
+    profile?.language ?? "es"
+  );
 
   function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
-    setSuccessMsg(null);
-
-    saveProfile({
+    onSave({
       name: localName,
       email: localEmail,
       language
     });
   }
 
-  if (loadingProfile) {
-    return (
-      <div className="flex items-center gap-2 text-sm text-[var(--text-secondary)]">
-        <Loader />
-        <span>Cargando perfil...</span>
-      </div>
-    );
-  }
-
-  if (profileError) {
-    return (
-      <Alert
-        variant="error"
-        title="No se ha podido cargar tu perfil"
-        description={String(profileError)}
-      />
-    );
-  }
-
   return (
-    <form className="space-y-4 max-w-lg" onSubmit={handleSubmit}>
-      {saveError && (
-        <Alert
-          variant="error"
-          title="No se ha podido guardar"
-          description={saveError.message}
-        />
-      )}
-
-      {successMsg && (
-        <Alert
-          variant="success"
-          title={successMsg}
-        />
-      )}
-
-      <FormField id="name" label="Nombre">
-        <Input
+    <form className="space-y-4 text-sm" onSubmit={handleSubmit}>
+      <div className="space-y-1">
+        <label className="block text-[var(--text-primary)] font-medium">
+          Nombre
+        </label>
+        <input
+          className="w-full rounded-md border border-border bg-transparent px-3 py-2 text-[var(--text-primary)] outline-none focus:ring-2 focus:ring-[var(--text-primary)]/20"
           value={localName}
           onChange={(e) => setLocalName(e.target.value)}
         />
-      </FormField>
+      </div>
 
-      <FormField
-        id="email"
-        label="Email"
-        hint="Este email se usará para notificaciones importantes."
-      >
-        <Input
-          type="email"
+      <div className="space-y-1">
+        <label className="block text-[var(--text-primary)] font-medium">
+          Email
+        </label>
+        <input
+          className="w-full rounded-md border border-border bg-transparent px-3 py-2 text-[var(--text-primary)] outline-none focus:ring-2 focus:ring-[var(--text-primary)]/20"
           value={localEmail}
           onChange={(e) => setLocalEmail(e.target.value)}
+          type="email"
         />
-      </FormField>
+      </div>
 
-      <FormField
-        id="language"
-        label="Idioma"
-        hint="Idioma preferido de la interfaz."
-      >
-        <Select
+      <div className="space-y-1">
+        <label className="block text-[var(--text-primary)] font-medium">
+          Idioma
+        </label>
+        <select
+          className="w-full rounded-md border border-border bg-transparent px-3 py-2 text-[var(--text-primary)] outline-none focus:ring-2 focus:ring-[var(--text-primary)]/20"
           value={language}
           onChange={(e) => setLanguage(e.target.value)}
         >
           <option value="es">Español</option>
-          <option value="en">Inglés</option>
-        </Select>
-      </FormField>
-
-      <div className="flex justify-end pt-4">
-        <Button
-          type="submit"
-          disabled={isSaving}
-          className="min-w-[140px]"
-        >
-          {isSaving ? (
-            <>
-              <Loader size="sm" className="mr-2" />
-              Guardando...
-            </>
-          ) : (
-            "Guardar cambios"
-          )}
-        </Button>
+          <option value="en">English</option>
+        </select>
       </div>
+
+      <Button type="submit" className="w-full">
+        Guardar cambios
+      </Button>
     </form>
   );
 }

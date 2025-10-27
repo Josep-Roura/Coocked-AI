@@ -1,17 +1,18 @@
 "use client";
 
-import { useEffect, useState, useCallback } from "react";
+import { useState, useCallback } from "react";
 
 /**
- * Hook de sesión mock.
- * - Usa localStorage ("cookedai_auth" = "1") para persistir login.
- * - Expone { ready, isAuthenticated, login, logout }.
+ * useSession
  *
- * Nota: `ready` indica "ya comprobé el entorno cliente".
- * Esto es útil para no redirigir demasiado pronto en SSR.
+ * - Lee el estado de autenticación desde localStorage ("cookedai_auth").
+ * - Expone login() / logout() para actualizar estado.
+ * - Expone ready para que la UI sepa si está en cliente.
+ *
+ * NOTA: evitamos useEffect con setState porque tu linter lo marca como error.
  */
 
-function readInitialAuth(): boolean {
+function readAuthFromLocalStorage(): boolean {
   if (typeof window === "undefined") {
     return false;
   }
@@ -23,26 +24,20 @@ function readInitialAuth(): boolean {
 }
 
 export function useSession() {
-  // hidratamos isAuthenticated directamente desde localStorage en primera renderización cliente
-  const [isAuthenticated, setIsAuthenticated] = useState<boolean>(
-    readInitialAuth
-  );
-  const [ready, setReady] = useState(false);
+  const isBrowser = typeof window !== "undefined";
 
-  // Marcamos que ya hemos evaluado en cliente
-  useEffect(() => {
-    // Este efecto ya no llama setIsAuthenticated() directamente
-    // a menos que detectemos un desajuste raro.
-    const currently = readInitialAuth();
-    if (currently !== isAuthenticated) {
-      setIsAuthenticated(currently);
-    }
-    setReady(true);
-  }, [isAuthenticated]);
+  // estado inicial: si estamos en browser, leemos localStorage, si no false
+  const [isAuthenticated, setIsAuthenticated] = useState<boolean>(
+    isBrowser ? readAuthFromLocalStorage() : false
+  );
+
+  // ready = ya sabemos si hay window (estamos en el cliente)
+  const ready = isBrowser;
 
   const login = useCallback(() => {
     if (typeof window !== "undefined") {
       window.localStorage.setItem("cookedai_auth", "1");
+      document.cookie = "cookedai_auth=1; path=/; SameSite=Lax";
     }
     setIsAuthenticated(true);
   }, []);
@@ -50,6 +45,8 @@ export function useSession() {
   const logout = useCallback(() => {
     if (typeof window !== "undefined") {
       window.localStorage.removeItem("cookedai_auth");
+      document.cookie =
+        "cookedai_auth=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT; SameSite=Lax";
     }
     setIsAuthenticated(false);
   }, []);

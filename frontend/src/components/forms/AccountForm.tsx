@@ -31,7 +31,6 @@ export function AccountForm() {
   // rellenar inicial cuando llega el perfil
   useEffect(() => {
     if (profile) {
-        // eslint-disable-next-line react-hooks/set-state-in-effect
         setLocalName(profile.name ?? "");
         setLocalEmail(profile.email ?? "");
         setLanguage(profile.language ?? "es");

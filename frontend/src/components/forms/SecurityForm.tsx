@@ -32,7 +32,6 @@ export function SecurityForm() {
   // Rellenamos el estado inicial del 2FA
   useEffect(() => {
     if (profile) {
-        // eslint-disable-next-line react-hooks/set-state-in-effect
         setTwoFactor(!!profile.twoFactorEnabled);
     }
   }, [profile]);

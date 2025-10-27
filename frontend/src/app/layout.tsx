@@ -2,10 +2,43 @@ import type { Metadata } from "next";
 import "@/styles/globals.css";
 import { PublicHeader } from "@/components/layout/PublicHeader";
 import { AppProviders } from "@/components/AppProviders";
+import { ThemeInit } from "@/components/ThemeInit";
+import { Analytics } from "@/components/Analytics";
 
 export const metadata: Metadata = {
-  title: "Cooked-AI",
-  description: "Cooked-AI: descripción corta del producto aquí."
+  metadataBase: new URL("https://cooked-ai.local"),
+  title: "Cooked-AI – Tu comida post-entreno optimizada por IA",
+  description:
+    "Genera en segundos el plan nutricional perfecto según tu entreno, objetivo y preferencias. IA para atletas reales.",
+  openGraph: {
+    title: "Cooked-AI",
+    description:
+      "Tu comida post-entreno optimizada por IA. Recupera mejor y rinde más.",
+    url: "https://cooked-ai.local",
+    siteName: "Cooked-AI",
+    images: [
+      {
+        url: "/og-image.png",
+        width: 1200,
+        height: 630,
+        alt: "Cooked-AI App Preview"
+      }
+    ],
+    locale: "es_ES",
+    type: "website"
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: "Cooked-AI",
+    description:
+      "Genera tu comida post-entreno personalizada en segundos.",
+    images: ["/og-image.png"]
+  },
+  icons: {
+    icon: "/favicon.ico",
+    apple: "/apple-touch-icon.png"
+  },
+  manifest: "/manifest.json"
 };
 
 export default function RootLayout({
@@ -15,14 +48,16 @@ export default function RootLayout({
 }) {
   return (
     <html lang="es" className="bg-[var(--bg)]">
-      <body>
-        <AppProviders>
-          <PublicHeader />
-          <main className="px-4 py-12 text-[var(--text-primary)]">
-            <div className="mx-auto max-w-content">{children}</div>
-          </main>
-        </AppProviders>
-      </body>
+        <body className="text-[var(--text-primary)] bg-[var(--bg)] antialiased">
+          <AppProviders>
+            <ThemeInit />
+            <Analytics />
+            <PublicHeader />
+            <main className="px-4 py-12">
+              <div className="mx-auto max-w-content">{children}</div>
+            </main>
+          </AppProviders>
+        </body>
     </html>
   );
 }

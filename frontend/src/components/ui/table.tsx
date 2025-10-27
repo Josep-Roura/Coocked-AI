@@ -34,8 +34,22 @@ export function TBody({ children }: { children: React.ReactNode }) {
   return <tbody className="divide-y divide-border">{children}</tbody>;
 }
 
-export function TR({ children }: { children: React.ReactNode }) {
-  return <tr className="hover:bg-black/5">{children}</tr>;
+// ⬇️ Aquí está la clave: ahora TR acepta props nativas de <tr>
+export function TR({
+  children,
+  className,
+  ...rest
+}: React.HTMLAttributes<HTMLTableRowElement> & {
+  className?: string;
+}) {
+  return (
+    <tr
+      className={cn("hover:bg-black/5", className)}
+      {...rest}
+    >
+      {children}
+    </tr>
+  );
 }
 
 export function TH({

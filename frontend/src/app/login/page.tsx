@@ -1,89 +1,127 @@
 "use client";
 
-import { useState } from "react";
-import { FormField } from "@/components/ui/form-field";
-import { Input } from "@/components/ui/input";
+import { Suspense, useEffect, useState } from "react";
+import { useSession } from "@/lib/auth/session";
 import { Button } from "@/components/ui/button";
-import { Alert } from "@/components/feedback/Alert";
-import { Loader } from "@/components/feedback/Loader";
-import { useLoginMutation } from "@/lib/api/useLoginMutation";
-import { useRouter } from "next/navigation";
+import { MotionWrapper } from "@/components/motion-wrapper";
+import { useRouter, useSearchParams } from "next/navigation";
 
+// Wrapper page: mete Suspense alrededor del contenido que usa useSearchParams
 export default function LoginPage() {
+  return (
+    <Suspense
+      fallback={
+        <div className="flex justify-center items-center py-20 text-[var(--text-secondary)] text-sm">
+          Cargando login…
+        </div>
+      }
+    >
+      <LoginContent />
+    </Suspense>
+  );
+}
+
+// Todo el comportamiento real vive aquí
+function LoginContent() {
   const router = useRouter();
+  const searchParams = useSearchParams();
 
-  const [email, setEmail] = useState("demo@cooked.ai");
-  const [password, setPassword] = useState("123456");
+  const { login, isAuthenticated, ready } = useSession();
 
-  const { login, isLoading, error } = useLoginMutation({
-    onSuccess: () => {
-      // si login ok -> vamos al dashboard interno
-      router.push("/app");
-    }
-  });
+  const [email, setEmail] = useState("");
+  const [pwd, setPwd] = useState("");
+  const [loading, setLoading] = useState(false);
 
-  function handleSubmit(e: React.FormEvent) {
+  // Redirige si ya estás autenticado
+  useEffect(() => {
+    if (!ready) return;
+    if (!isAuthenticated) return;
+
+    const redirectTo = searchParams.get("redirectTo") || "/app";
+    router.replace(redirectTo);
+  }, [ready, isAuthenticated, router, searchParams]);
+
+  async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
-    login({ email, password });
+    setLoading(true);
+
+    // 1. Set cookie que lee el middleware del lado servidor
+    document.cookie = "cookedai_auth=1; path=/; SameSite=Lax";
+
+    // 2. Marca sesión en localStorage / hook
+    login();
+
+    // 3. Redirige
+    const redirectTo = searchParams.get("redirectTo") || "/app";
+    router.replace(redirectTo);
   }
 
   return (
-    <section className="mx-auto max-w-sm space-y-8">
-      <header className="space-y-2 text-center">
-        <h1 className="text-2xl font-semibold leading-tight text-[var(--text-primary)]">
-          Iniciar sesión
-        </h1>
-        <p className="text-[var(--text-secondary)] text-sm leading-relaxed">
-          Accede a tu panel. Usa el usuario demo para probar:
-          <br />
-          demo@cooked.ai / 123456
-        </p>
-      </header>
+    <MotionWrapper keyId="login-card">
+      <div className="max-w-sm mx-auto mt-16 rounded-lg border border-border bg-[var(--surface)] shadow-md p-6 space-y-6">
+        <header className="space-y-2 text-center">
+          <h1 className="text-lg font-semibold text-[var(--text-primary)] leading-tight">
+            Accede a tu panel
+          </h1>
+          <p className="text-[var(--text-secondary)] text-sm leading-relaxed">
+            Revisa adherencia, tu calendario semanal y la nutrición de cada
+            entreno.
+          </p>
+        </header>
 
-      <form onSubmit={handleSubmit} className="space-y-4">
-        {error && (
-          <Alert
-            variant="error"
-            title="No se pudo iniciar sesión"
-            description={error.message}
-          />
-        )}
+        <form onSubmit={handleSubmit} className="space-y-4">
+          <div className="space-y-1">
+            <label
+              htmlFor="email"
+              className="text-[var(--text-primary)] text-sm font-medium"
+            >
+              Email
+            </label>
+            <input
+              id="email"
+              className="w-full rounded-md border border-border bg-transparent px-3 py-2 text-[var(--text-primary)] text-sm outline-none focus:ring-2 focus:ring-[var(--text-primary)]/20"
+              placeholder="tu@email.com"
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              autoComplete="email"
+              required
+            />
+          </div>
 
-        <FormField id="email" label="Email">
-          <Input
-            type="email"
-            value={email}
-            onChange={(e) => setEmail(e.target.value)}
-          />
-        </FormField>
+          <div className="space-y-1">
+            <label
+              htmlFor="pwd"
+              className="text-[var(--text-primary)] text-sm font-medium"
+            >
+              Contraseña
+            </label>
+            <input
+              id="pwd"
+              type="password"
+              className="w-full rounded-md border border-border bg-transparent px-3 py-2 text-[var(--text-primary)] text-sm outline-none focus:ring-2 focus:ring-[var(--text-primary)]/20"
+              placeholder="••••••••"
+              value={pwd}
+              onChange={(e) => setPwd(e.target.value)}
+              autoComplete="current-password"
+              required
+            />
+          </div>
 
-        <FormField id="password" label="Contraseña">
-          <Input
-            type="password"
-            value={password}
-            onChange={(e) => setPassword(e.target.value)}
-          />
-        </FormField>
+          <Button
+            className="w-full"
+            isLoading={loading}
+            disabled={loading}
+            type="submit"
+          >
+            Entrar
+          </Button>
+        </form>
 
-        <Button
-          type="submit"
-          disabled={isLoading}
-          className="w-full h-11 text-base font-medium"
-        >
-          {isLoading ? (
-            <>
-              <Loader size="sm" className="mr-2" />
-              Entrando...
-            </>
-          ) : (
-            "Entrar"
-          )}
-        </Button>
-      </form>
-
-      <footer className="text-center text-xs text-[var(--text-secondary)] leading-relaxed">
-        Al iniciar sesión aceptas los Términos y la Política de Privacidad.
-      </footer>
-    </section>
+        <div className="text-[var(--text-secondary)] text-[11px] leading-relaxed text-center">
+          Acceso demo. Pronto podrás iniciar sesión con tu cuenta real o
+          conectar TrainingPeaks.
+        </div>
+      </div>
+    </MotionWrapper>
   );
 }

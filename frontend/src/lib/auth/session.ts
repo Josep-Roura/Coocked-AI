@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState, useCallback } from "react";
+import { getDemoUserId } from "@/lib/auth/getDemoUserId";
 
 /**
  * Hook de sesión mock.
@@ -31,8 +32,6 @@ export function useSession() {
 
   // Marcamos que ya hemos evaluado en cliente
   useEffect(() => {
-    // Este efecto ya no llama setIsAuthenticated() directamente
-    // a menos que detectemos un desajuste raro.
     const currently = readInitialAuth();
     if (currently !== isAuthenticated) {
       setIsAuthenticated(currently);
@@ -42,7 +41,11 @@ export function useSession() {
 
   const login = useCallback(() => {
     if (typeof window !== "undefined") {
+      const demoUserId = getDemoUserId();
       window.localStorage.setItem("cookedai_auth", "1");
+      window.localStorage.setItem("cookedai_user_id", demoUserId);
+      document.cookie = "cookedai_auth=1; path=/; max-age=31536000";
+      document.cookie = `cookedai_user_id=${demoUserId}; path=/; max-age=31536000`;
     }
     setIsAuthenticated(true);
   }, []);
@@ -50,6 +53,9 @@ export function useSession() {
   const logout = useCallback(() => {
     if (typeof window !== "undefined") {
       window.localStorage.removeItem("cookedai_auth");
+      window.localStorage.removeItem("cookedai_user_id");
+      document.cookie = "cookedai_auth=; path=/; max-age=0";
+      document.cookie = "cookedai_user_id=; path=/; max-age=0";
     }
     setIsAuthenticated(false);
   }, []);

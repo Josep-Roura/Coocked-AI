@@ -25,7 +25,7 @@ export function CreatePostWorkoutPlanForm({
   isLoading: boolean;
   error?: string;
 }) {
-  const [workoutType, setWorkoutType] = useState("fuerza");
+  const [workoutType, setWorkoutType] = useState("Fuerza / pesas");
   const [durationMin, setDurationMin] = useState<number>(45);
   const [goal, setGoal] = useState("musculo");
   const [weightKg, setWeightKg] = useState<number>(70);
@@ -87,10 +87,12 @@ export function CreatePostWorkoutPlanForm({
             value={workoutType}
             onChange={(e) => setWorkoutType(e.target.value)}
           >
-            <option value="fuerza">Fuerza / pesas</option>
-            <option value="hiit">HIIT / intensidad alta</option>
-            <option value="cardio">Cardio resistencia</option>
-            <option value="mixto">Mixto</option>
+            <option value="Fuerza / pesas">Fuerza / pesas</option>
+            <option value="HIIT alta intensidad">HIIT / intensidad alta</option>
+            <option value="Cardio resistencia (Z2)">
+              Cardio resistencia
+            </option>
+            <option value="Sesión mixta">Mixto</option>
           </Select>
         </FormField>
 

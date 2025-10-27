@@ -25,7 +25,11 @@ export function useWeeklyPlanQuery() {
         }
         const json = (await res.json()) as WeeklyPlanResponse;
         if (!cancelled) {
-          setData(json.week || []);
+          const normalized = (json.week || []).map((w) => ({
+            ...w,
+            nutrition: Array.isArray(w.nutrition) ? w.nutrition : []
+          }));
+          setData(normalized);
           setError(undefined);
         }
       } catch (err) {

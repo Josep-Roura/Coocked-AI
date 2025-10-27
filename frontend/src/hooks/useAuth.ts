@@ -1,11 +1,12 @@
-// placeholder/listo para conectar a backend real
+"use client";
+
+import { useSessionStore } from "@/lib/store/useSessionStore";
+
 export function useAuth() {
-  // devolvemos usuario falso de momento
+  const user = useSessionStore((s) => s.user);
+
   return {
-    user: {
-      name: "Demo User",
-      email: "demo@pdem.app"
-    },
-    isAuthenticated: true
+    user,
+    isAuthenticated: !!user
   };
 }

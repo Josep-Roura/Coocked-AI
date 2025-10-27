@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import "@/styles/globals.css";
 import { PublicHeader } from "@/components/layout/PublicHeader";
+import { AppProviders } from "@/components/AppProviders";
 
 export const metadata: Metadata = {
   title: "Cooked-AI",
@@ -15,10 +16,12 @@ export default function RootLayout({
   return (
     <html lang="es" className="bg-[var(--bg)]">
       <body>
-        <PublicHeader />
-        <main className="px-4 py-12 text-[var(--text-primary)]">
-          <div className="mx-auto max-w-content">{children}</div>
-        </main>
+        <AppProviders>
+          <PublicHeader />
+          <main className="px-4 py-12 text-[var(--text-primary)]">
+            <div className="mx-auto max-w-content">{children}</div>
+          </main>
+        </AppProviders>
       </body>
     </html>
   );

@@ -84,7 +84,7 @@ function ResourcesTable({
             >
               Aún no has creado nada.
               <br />
-              Usa el botón "Crear recurso" desde el dashboard para empezar.
+              Usa el botón Crear recurso desde el dashboard para empezar.
             </TD>
           </TR>
         ) : (

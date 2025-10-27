@@ -1,22 +1,27 @@
 "use client";
 
+import { ReactNode, useEffect } from "react";
+import { useAuth } from "@/hooks/useAuth";
+import { useRouter } from "next/navigation";
 import { AppLayout } from "@/components/layout/AppLayout";
-import { QueryClientProvider } from "@tanstack/react-query";
-import { getQueryClient } from "@/lib/queryClient";
-import { ReactNode, useState } from "react";
 
 export default function InternalLayout({
   children
 }: {
   children: ReactNode;
 }) {
-  // Creamos un QueryClient que se mantenga estable
-  // por cada render del layout
-  const [queryClient] = useState(() => getQueryClient());
+  const { isAuthenticated } = useAuth();
+  const router = useRouter();
 
-  return (
-    <QueryClientProvider client={queryClient}>
-      <AppLayout>{children}</AppLayout>
-    </QueryClientProvider>
-  );
+  useEffect(() => {
+    if (!isAuthenticated) {
+      router.replace("/login");
+    }
+  }, [isAuthenticated, router]);
+
+  if (!isAuthenticated) {
+    return null;
+  }
+
+  return <AppLayout>{children}</AppLayout>;
 }

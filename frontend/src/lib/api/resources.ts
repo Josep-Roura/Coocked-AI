@@ -17,7 +17,7 @@ export type CreatedResource = {
 };
 
 // "BD" en memoria (se reinicia al recargar el browser en dev)
-let RESOURCES_DB: CreatedResource[] = [
+const RESOURCES_DB: CreatedResource[] = [
   {
     id: crypto.randomUUID(),
     title: "Informe IA semanal",

@@ -24,6 +24,14 @@ export function FormField({
     ? `${id}-hint`
     : undefined;
 
+  // Si children es un elemento React válido, le inyectamos props de accesibilidad
+  const enhancedChild = React.isValidElement(children)
+    ? React.cloneElement(children as React.ReactElement, {
+        id,
+        "aria-describedby": describedById
+      })
+    : children;
+
   return (
     <div className={cn("flex flex-col gap-1", className)}>
       <label
@@ -33,12 +41,7 @@ export function FormField({
         {label}
       </label>
 
-      {React.isValidElement(children)
-        ? React.cloneElement(children as any, {
-            id,
-            "aria-describedby": describedById
-          })
-        : children}
+      {enhancedChild}
 
       {hint && !error && (
         <p

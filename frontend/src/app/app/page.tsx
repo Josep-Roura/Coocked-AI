@@ -80,7 +80,7 @@ export default function DashboardPage() {
               <Alert
                 variant="success"
                 title="Recurso creado correctamente"
-                description={`"${lastCreated.title}" (${lastCreated.category}) ya está disponible.`}
+                description={`${lastCreated.title} (${lastCreated.category}) ya está disponible.`}
               />
             ) : (
               <ul className="text-sm leading-relaxed text-[var(--text-secondary)] space-y-1">

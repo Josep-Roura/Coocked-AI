@@ -22,13 +22,15 @@ export function Card({
 
 export function CardHeader({
   title,
-  description
+  description,
+  className
 }: {
   title: string;
   description?: string;
+  className?: string;
 }) {
   return (
-    <header className="mb-4">
+    <header className={cn("mb-4", className)}>
       <h2 className="text-lg font-semibold leading-tight">{title}</h2>
       {description && (
         <p className="text-sm text-[var(--text-secondary)] mt-1">
@@ -40,9 +42,11 @@ export function CardHeader({
 }
 
 export function CardContent({
-  children
+  children,
+  className
 }: {
   children: React.ReactNode;
+  className?: string;
 }) {
-  return <div className="text-sm">{children}</div>;
+  return <div className={cn("text-sm", className)}>{children}</div>;
 }

@@ -1,4 +1,5 @@
 import { cn } from "@/lib/utils";
+import * as React from "react";
 
 export function TableWrapper({
   children,
@@ -7,8 +8,6 @@ export function TableWrapper({
   children: React.ReactNode;
   className?: string;
 }) {
-  // overflow-x-auto: si hay muchas columnas, permite scroll horizontal
-  // shadow-sm/border: da look "real dashboard"
   return (
     <div
       className={cn(
@@ -41,13 +40,19 @@ export function TR({ children }: { children: React.ReactNode }) {
 
 export function TH({
   children,
-  className
-}: {
-  children: React.ReactNode;
+  className,
+  ...rest
+}: React.ThHTMLAttributes<HTMLTableCellElement> & {
   className?: string;
 }) {
   return (
-    <th className={cn("px-4 py-3 font-medium whitespace-nowrap", className)}>
+    <th
+      className={cn(
+        "px-4 py-3 font-medium whitespace-nowrap",
+        className
+      )}
+      {...rest}
+    >
       {children}
     </th>
   );
@@ -55,13 +60,19 @@ export function TH({
 
 export function TD({
   children,
-  className
-}: {
-  children: React.ReactNode;
+  className,
+  ...rest
+}: React.TdHTMLAttributes<HTMLTableCellElement> & {
   className?: string;
 }) {
   return (
-    <td className={cn("px-4 py-3 align-middle text-[var(--text-primary)]", className)}>
+    <td
+      className={cn(
+        "px-4 py-3 align-middle text-[var(--text-primary)]",
+        className
+      )}
+      {...rest}
+    >
       {children}
     </td>
   );

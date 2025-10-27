@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Card, CardHeader, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Modal } from "@/components/ui/modal";
@@ -12,8 +12,10 @@ import { useAdherenceMutation } from "@/lib/api/useAdherenceMutation";
 import { MotionWrapper } from "@/components/motion-wrapper";
 import { track } from "@/lib/analytics/track";
 import { WeeklyCalendar } from "@/components/calendar/WeeklyCalendar";
-import { WeeklyWorkout } from "@/lib/types/training";
 import { useTrainingPeaksConnection } from "@/lib/api/useTrainingPeaksConnection";
+import { useListResourcesQuery } from "@/lib/api/useListResourcesQuery";
+import { useWeeklyPlanQuery } from "@/lib/api/useWeeklyPlanQuery";
+import { Loader } from "@/components/feedback/Loader";
 
 export default function DashboardPage() {
   const [openPlanModal, setOpenPlanModal] = useState(false);
@@ -27,6 +29,27 @@ export default function DashboardPage() {
       }
     | undefined
   >(undefined);
+
+  const { data: planHistory, isLoading: isLoadingHistory } =
+    useListResourcesQuery();
+
+  useEffect(() => {
+    if (planHistory.length === 0) {
+      if (lastCreated) {
+        setLastCreated(undefined);
+      }
+      return;
+    }
+
+    if (!lastCreated) {
+      const newest = planHistory[0];
+      setLastCreated({
+        id: newest.id,
+        title: newest.title,
+        category: newest.category
+      });
+    }
+  }, [lastCreated, planHistory]);
 
   const { createResource, isLoading, error } = useCreateResourceMutation({
     onSuccess: (res) => {
@@ -58,29 +81,20 @@ export default function DashboardPage() {
     dietPrefs: string;
     notes: string;
   }) {
-    const generatedTitle = buildPlanTitle(data);
-    const category = data.goal;
-
     createResource({
-      title: generatedTitle,
-      description: data.notes || "",
-      category,
-      visibility: "private",
-      planData: {
-        workoutType: data.workoutType,
-        durationMin: data.durationMin,
-        goal: data.goal,
-        weightKg: data.weightKg,
-        dietPrefs: data.dietPrefs,
-        notes: data.notes
-      }
+      workoutType: data.workoutType,
+      durationMin: data.durationMin,
+      goal: data.goal,
+      weightKg: data.weightKg,
+      dietPrefs: data.dietPrefs,
+      notes: data.notes
     });
   }
 
   function handleMark(taken: boolean) {
     if (!lastCreated) return;
     markAdherence({
-      resourceId: lastCreated.id,
+      planId: lastCreated.id,
       taken
     });
   }
@@ -101,74 +115,8 @@ export default function DashboardPage() {
   }
   // -----------------------------------------------
 
-  // MOCK de semana (esto luego vendrá de TrainingPeaks + IA)
-  const mockWeek: WeeklyWorkout[] = [
-    {
-      id: "w1",
-      day: 0,
-      start: "07:30",
-      end: "08:30",
-      type: "Fuerza tren superior",
-      intensity: "alta",
-      nutrition: [
-        {
-          label: "Pre-entreno (30 min antes)",
-          advice:
-            "20g whey aislado + 30g crema de arroz. Objetivo: energía rápida y aminoácidos para evitar catabolismo."
-        },
-        {
-          label: "Post-entreno inmediato",
-          advice:
-            "Batido 40g proteína + carbo rápido (fruta + arroz). Tómatelo en los próximos 30 minutos."
-        }
-      ]
-    },
-    {
-      id: "w2",
-      day: 2,
-      start: "19:00",
-      end: "19:45",
-      type: "Rodaje Z2",
-      intensity: "media",
-      nutrition: [
-        {
-          label: "Pre-entreno",
-          advice:
-            "Snack ligero: plátano + 10g crema cacahuete. Evita grasa pesada justo antes para no molestar el estómago."
-        },
-        {
-          label: "Post-entreno",
-          advice:
-            "Carbo complejo + proteína magra (arroz + pollo). Mantén grasas bajas para acelerar recarga de glucógeno."
-        },
-        {
-          label: "Recuperación tarde",
-          advice:
-            "Antes de dormir: caseína 25g para soporte muscular nocturno."
-        }
-      ]
-    },
-    {
-      id: "w3",
-      day: 4,
-      start: "18:30",
-      end: "19:30",
-      type: "HIIT piernas",
-      intensity: "alta",
-      nutrition: [
-        {
-          label: "Pre-entreno",
-          advice:
-            "Carbo rápido (pan blanco + miel) + electrolitos. Evita fibra para no sobrecargar el estómago."
-        },
-        {
-          label: "Post-entreno",
-          advice:
-            "Batido whey + bebida isotónica. En 60 min, cena con carbo alto + sodio para favorecer la recarga."
-        }
-      ]
-    }
-  ];
+  const { data: week, loading: loadingWeek, error: weekError } =
+    useWeeklyPlanQuery();
 
   return (
     <>
@@ -180,7 +128,7 @@ export default function DashboardPage() {
             <Card>
               <CardHeader
                 title="Acción rápida"
-                description="Genera tu comida ideal post-entreno en menos de 10s"
+                description="Genera tu plan diario completo en menos de 10s"
               />
               <CardContent>
                 <Button
@@ -188,7 +136,7 @@ export default function DashboardPage() {
                   isLoading={isLoading}
                   onClick={handleOpenPlanModal}
                 >
-                  Generar plan post-entreno
+                  Generar plan diario
                 </Button>
               </CardContent>
             </Card>
@@ -202,7 +150,12 @@ export default function DashboardPage() {
                 description="Resumen de tu recomendación más reciente"
               />
               <CardContent className="space-y-3">
-                {lastCreated ? (
+                {isLoadingHistory ? (
+                  <div className="flex items-center gap-2 text-sm text-[var(--text-secondary)]">
+                    <Loader size="sm" />
+                    <span>Cargando último plan...</span>
+                  </div>
+                ) : lastCreated ? (
                   <Alert
                     variant="success"
                     title="Plan generado correctamente"
@@ -211,7 +164,7 @@ export default function DashboardPage() {
                 ) : (
                   <ul className="text-sm leading-relaxed text-[var(--text-secondary)] space-y-1">
                     <li>• Aún no has generado ningún plan hoy</li>
-                    <li>• Pulsa “Generar plan post-entreno”</li>
+                    <li>• Pulsa “Generar plan diario”</li>
                     <li>• Lo guardaremos en tu historial</li>
                   </ul>
                 )}
@@ -289,13 +242,32 @@ export default function DashboardPage() {
             </div>
 
             {/* Calendario semanal */}
-            <WeeklyCalendar week={mockWeek} />
+            {loadingWeek ? (
+              <div className="flex items-center gap-2 text-sm text-[var(--text-secondary)]">
+                <Loader size="sm" />
+                <span>Cargando plan semanal...</span>
+              </div>
+            ) : week.length > 0 ? (
+              <WeeklyCalendar week={week} />
+            ) : weekError ? (
+              <Alert
+                variant="error"
+                title="No se pudo cargar tu semana"
+                description={weekError}
+              />
+            ) : (
+              <div className="rounded-md border border-dashed border-border p-6 text-center text-sm text-[var(--text-secondary)]">
+                Aún no tienes sesiones planificadas esta semana.
+                <br />
+                Conecta TrainingPeaks o añade entrenos manualmente para ver la
+                nutrición recomendada alrededor de cada sesión.
+              </div>
+            )}
 
             <p className="text-[var(--text-secondary)] text-[11px] leading-relaxed">
               Muy pronto: leeremos automáticamente tus entrenos planificados
-              desde TrainingPeaks y generaremos para cada uno:
-              pre-entreno → post-entreno → recuperación tarde. Sin que tengas
-              que pensar qué comer.
+              desde TrainingPeaks y generaremos para cada uno la nutrición de
+              todo el día.
             </p>
           </CardContent>
         </Card>
@@ -340,8 +312,8 @@ export default function DashboardPage() {
       <Modal
         open={openPlanModal}
         onClose={() => setOpenPlanModal(false)}
-        title="Plan post-entreno"
-        description="Cuéntame tu entreno de hoy y te doy la comida ideal para recuperar mejor."
+        title="Plan diario personalizado"
+        description="Cuéntame tu entreno de hoy y te doy la nutrición completa del día."
         size="md"
       >
         <CreatePostWorkoutPlanForm
@@ -454,7 +426,7 @@ function AdherenceActionBlock({
 
         {disabled && (
           <div className="text-[var(--text-secondary)] text-[11px]">
-            Genera primero un plan post-entreno para registrar adherencia.
+            Genera primero un plan diario para registrar adherencia.
           </div>
         )}
       </div>
@@ -462,17 +434,3 @@ function AdherenceActionBlock({
   );
 }
 
-// Generador de título comercial del plan post-entreno
-function buildPlanTitle(data: {
-  workoutType: string;
-  durationMin: number;
-  goal: string;
-  weightKg: number;
-  dietPrefs: string;
-  notes: string;
-}) {
-  if (data.goal === "musculo") return "Recuperación muscular alta en proteína";
-  if (data.goal === "grasa") return "Recuperación ligera baja en carbo";
-  if (data.goal === "rendimiento") return "Recarga glucógeno rápida";
-  return "Plan post-entreno personalizado";
-}

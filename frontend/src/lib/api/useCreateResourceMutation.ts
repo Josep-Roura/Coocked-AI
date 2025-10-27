@@ -3,22 +3,21 @@
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import {
   createResourceAPI,
-  type CreateResourceInput,
-  type CreatedResource
+  type CreatePlanInput,
+  type PlanSummary
 } from "./resources";
 
 export function useCreateResourceMutation(opts?: {
-  onSuccess?: (res: CreatedResource) => void;
+  onSuccess?: (res: PlanSummary) => void;
   onError?: (err: Error) => void;
 }) {
   const queryClient = useQueryClient();
 
-  const mutation = useMutation<CreatedResource, Error, CreateResourceInput>({
-    mutationFn: async (payload: CreateResourceInput) => {
+  const mutation = useMutation<PlanSummary, Error, CreatePlanInput>({
+    mutationFn: async (payload: CreatePlanInput) => {
       return createResourceAPI(payload);
     },
     onSuccess: (res) => {
-      // invalidamos la lista para que /app/resources se actualice
       queryClient.invalidateQueries({
         queryKey: ["resources", "list"]
       });

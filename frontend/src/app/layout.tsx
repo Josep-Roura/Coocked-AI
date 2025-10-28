@@ -6,16 +6,16 @@ import { ThemeInit } from "@/components/ThemeInit";
 import { Analytics } from "@/components/Analytics";
 
 export const metadata: Metadata = {
-  metadataBase: new URL("https://coocked.ai"),
-  title: "Coocked AI – Cook smarter. Recover stronger.",
+  metadataBase: new URL("https://cooked-ai.local"),
+  title: "Cooked-AI – Tu plan diario nutricional optimizado por IA",
   description:
-    "Coocked AI diseña planes de nutrición diarios personalizados con IA para maximizar tu recuperación y rendimiento tras cada entreno.",
+    "Genera en segundos la nutrición completa de tu día según entreno, objetivo y preferencias. IA para atletas reales.",
   openGraph: {
     title: "Coocked AI",
     description:
-      "Nutrición inteligente para atletas. Genera tu plan diario personalizado con IA.",
-    url: "https://coocked.ai",
-    siteName: "Coocked AI",
+      "Tu plan diario nutricional optimizado por IA. Recupera mejor y rinde más.",
+    url: "https://cooked-ai.local",
+    siteName: "Cooked-AI",
     images: [
       {
         url: "/og-image.png",
@@ -31,7 +31,7 @@ export const metadata: Metadata = {
     card: "summary_large_image",
     title: "Coocked AI",
     description:
-      "Planes diarios de nutrición post-entreno generados por IA.",
+      "Genera tu plan diario personalizado en segundos.",
     images: ["/og-image.png"]
   },
   icons: {

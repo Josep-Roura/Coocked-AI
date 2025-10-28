@@ -63,7 +63,8 @@ function LoginContent() {
             Accede a tu panel diario
           </h1>
           <p className="text-[var(--text-secondary)] text-sm leading-relaxed">
-            Genera tu plan nutricional del día, registra adherencia y activa recordatorios post-entreno en segundos.
+            Genera tu plan diario, registra adherencia y activa recordatorios
+            post-entreno.
           </p>
         </header>
 

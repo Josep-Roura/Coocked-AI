@@ -19,11 +19,11 @@ export default function ResourcesPage() {
     <div className="space-y-6">
       <header>
         <h1 className="text-xl font-semibold text-[var(--text-primary)] leading-tight">
-          Tus planes post-entreno
+          Tus planes diarios
         </h1>
         <p className="text-[var(--text-secondary)] text-sm leading-relaxed">
-          Revisa lo que tu cuerpo necesita comer después de cada sesión para
-          recuperar mejor.
+          Revisa lo que tu cuerpo necesita en cada momento del día según tu
+          entreno y objetivo actual.
         </p>
       </header>
 
@@ -54,7 +54,6 @@ function PlansTable({
     id: string;
     title: string;
     category: string;
-    visibility: string;
     createdAt: string;
   }>;
 }) {
@@ -66,7 +65,6 @@ function PlansTable({
         <TR>
           <TH>Plan recomendado</TH>
           <TH>Objetivo</TH>
-          <TH>Visibilidad</TH>
           <TH>Creado</TH>
         </TR>
       </THead>
@@ -76,12 +74,11 @@ function PlansTable({
           <TR>
             <TD
               className="py-10 text-center text-[var(--text-secondary)]"
-              colSpan={4}
+              colSpan={3}
             >
               Aún no has generado ningún plan.
               <br />
-              Usa el botón Generar plan post-entreno desde el dashboard para
-              empezar.
+              Usa el botón Generar plan diario desde el dashboard para empezar.
             </TD>
           </TR>
         ) : (
@@ -96,9 +93,6 @@ function PlansTable({
             >
               <TD className="font-medium">{row.title}</TD>
               <TD className="capitalize">{row.category}</TD>
-              <TD className="capitalize text-[var(--text-secondary)]">
-                {row.visibility === "team" ? "Equipo" : "Privado"}
-              </TD>
               <TD className="text-[var(--text-secondary)] text-xs">
                 {formatDate(row.createdAt)}
               </TD>

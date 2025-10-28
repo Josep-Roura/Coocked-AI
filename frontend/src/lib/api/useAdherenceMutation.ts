@@ -1,17 +1,40 @@
 "use client";
 
 import { useMutation, useQueryClient } from "@tanstack/react-query";
-import { logAdherenceAPI } from "./adherence";
+
+async function postAdherence(payload: { planId: string; taken: boolean }) {
+  const response = await fetch("/api/adherence", {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json"
+    },
+    body: JSON.stringify(payload)
+  });
+
+  if (!response.ok) {
+    let message = "No se pudo registrar la adherencia";
+    try {
+      const json = (await response.json()) as { error?: string };
+      if (json?.error) message = json.error;
+    } catch {
+      // ignore json parse errors
+    }
+    throw new Error(message);
+  }
+
+  return response.json();
+}
 
 export function useAdherenceMutation() {
   const qc = useQueryClient();
 
-  const mutation = useMutation({
-    mutationFn: async (payload: { resourceId: string; taken: boolean }) => {
-      return logAdherenceAPI(payload);
-    },
+  const mutation = useMutation<
+    unknown,
+    Error,
+    { planId: string; taken: boolean }
+  >({
+    mutationFn: postAdherence,
     onSuccess: () => {
-      // invalidamos las métricas de adherencia para que se refresquen
       qc.invalidateQueries({
         queryKey: ["adherence", "stats7d"]
       });

@@ -1,10 +1,10 @@
 "use client";
 
 import { useQuery } from "@tanstack/react-query";
-import { getResourceByIdAPI, type CreatedResource } from "./resources";
+import { getResourceByIdAPI, type PlanDetail } from "./resources";
 
 export function useResourceByIdQuery(id: string | undefined) {
-  const query = useQuery<CreatedResource | null, Error>({
+  const query = useQuery<PlanDetail | null, Error>({
     queryKey: ["resources", "detail", id],
     queryFn: async () => {
       if (!id) return null;

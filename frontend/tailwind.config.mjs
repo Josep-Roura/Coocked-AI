@@ -41,7 +41,9 @@ const config = {
         }
       },
       fontFamily: {
-        sans: ["Inter", "system-ui", "sans-serif"]
+        sans: ["Inter", "system-ui", "sans-serif"],
+        heading: ["Inter Tight", "Inter", "system-ui", "sans-serif"],
+        metric: ["Space Grotesk", "Inter", "system-ui", "sans-serif"]
       },
       borderRadius: {
         lg: "1rem",

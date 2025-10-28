@@ -6,22 +6,22 @@ import { ThemeInit } from "@/components/ThemeInit";
 import { Analytics } from "@/components/Analytics";
 
 export const metadata: Metadata = {
-  metadataBase: new URL("https://cooked-ai.local"),
-  title: "Cooked-AI – Tu comida post-entreno optimizada por IA",
+  metadataBase: new URL("https://coocked.ai"),
+  title: "Coocked AI – Cook smarter. Recover stronger.",
   description:
-    "Genera en segundos el plan nutricional perfecto según tu entreno, objetivo y preferencias. IA para atletas reales.",
+    "Coocked AI diseña planes de nutrición diarios personalizados con IA para maximizar tu recuperación y rendimiento tras cada entreno.",
   openGraph: {
-    title: "Cooked-AI",
+    title: "Coocked AI",
     description:
-      "Tu comida post-entreno optimizada por IA. Recupera mejor y rinde más.",
-    url: "https://cooked-ai.local",
-    siteName: "Cooked-AI",
+      "Nutrición inteligente para atletas. Genera tu plan diario personalizado con IA.",
+    url: "https://coocked.ai",
+    siteName: "Coocked AI",
     images: [
       {
         url: "/og-image.png",
         width: 1200,
         height: 630,
-        alt: "Cooked-AI App Preview"
+        alt: "Coocked AI App Preview"
       }
     ],
     locale: "es_ES",
@@ -29,9 +29,9 @@ export const metadata: Metadata = {
   },
   twitter: {
     card: "summary_large_image",
-    title: "Cooked-AI",
+    title: "Coocked AI",
     description:
-      "Genera tu comida post-entreno personalizada en segundos.",
+      "Planes diarios de nutrición post-entreno generados por IA.",
     images: ["/og-image.png"]
   },
   icons: {
@@ -48,16 +48,16 @@ export default function RootLayout({
 }) {
   return (
     <html lang="es" className="bg-[var(--bg)]">
-        <body className="text-[var(--text-primary)] bg-[var(--bg)] antialiased">
-          <AppProviders>
-            <ThemeInit />
-            <Analytics />
-            <PublicHeader />
-            <main className="px-4 py-12">
-              <div className="mx-auto max-w-content">{children}</div>
-            </main>
-          </AppProviders>
-        </body>
+      <body className="text-[var(--text-primary)] bg-[var(--bg)] antialiased font-sans">
+        <AppProviders>
+          <ThemeInit />
+          <Analytics />
+          <PublicHeader />
+          <main className="px-4 py-12">
+            <div className="mx-auto max-w-content">{children}</div>
+          </main>
+        </AppProviders>
+      </body>
     </html>
   );
 }

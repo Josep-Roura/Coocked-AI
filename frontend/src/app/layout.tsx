@@ -11,7 +11,7 @@ export const metadata: Metadata = {
   description:
     "Genera en segundos la nutrición completa de tu día según entreno, objetivo y preferencias. IA para atletas reales.",
   openGraph: {
-    title: "Cooked-AI",
+    title: "Coocked AI",
     description:
       "Tu plan diario nutricional optimizado por IA. Recupera mejor y rinde más.",
     url: "https://cooked-ai.local",
@@ -21,7 +21,7 @@ export const metadata: Metadata = {
         url: "/og-image.png",
         width: 1200,
         height: 630,
-        alt: "Cooked-AI App Preview"
+        alt: "Coocked AI App Preview"
       }
     ],
     locale: "es_ES",
@@ -29,7 +29,7 @@ export const metadata: Metadata = {
   },
   twitter: {
     card: "summary_large_image",
-    title: "Cooked-AI",
+    title: "Coocked AI",
     description:
       "Genera tu plan diario personalizado en segundos.",
     images: ["/og-image.png"]
@@ -48,16 +48,16 @@ export default function RootLayout({
 }) {
   return (
     <html lang="es" className="bg-[var(--bg)]">
-        <body className="text-[var(--text-primary)] bg-[var(--bg)] antialiased">
-          <AppProviders>
-            <ThemeInit />
-            <Analytics />
-            <PublicHeader />
-            <main className="px-4 py-12">
-              <div className="mx-auto max-w-content">{children}</div>
-            </main>
-          </AppProviders>
-        </body>
+      <body className="text-[var(--text-primary)] bg-[var(--bg)] antialiased font-sans">
+        <AppProviders>
+          <ThemeInit />
+          <Analytics />
+          <PublicHeader />
+          <main className="px-4 py-12">
+            <div className="mx-auto max-w-content">{children}</div>
+          </main>
+        </AppProviders>
+      </body>
     </html>
   );
 }

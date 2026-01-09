@@ -32,6 +32,13 @@ function LoginContent() {
   const [pwd, setPwd] = useState("");
   const [loading, setLoading] = useState(false);
 
+  useEffect(() => {
+    const prefill = searchParams.get("prefill");
+    if (prefill) {
+      setEmail(prefill);
+    }
+  }, [searchParams]);
+
   // Redirige si ya estás autenticado
   useEffect(() => {
     if (!ready) return;
@@ -53,7 +60,7 @@ function LoginContent() {
       <div className="max-w-sm mx-auto mt-16 rounded-lg border border-border bg-[var(--surface)] shadow-md p-6 space-y-6">
         <header className="space-y-2 text-center">
           <h1 className="text-lg font-semibold text-[var(--text-primary)] leading-tight">
-            Accede a tu panel
+            Accede a tu panel diario
           </h1>
           <p className="text-[var(--text-secondary)] text-sm leading-relaxed">
             Genera tu plan diario, registra adherencia y activa recordatorios
